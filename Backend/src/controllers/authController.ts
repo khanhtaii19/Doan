@@ -2,9 +2,16 @@ import { Request, Response } from 'express';
 import User from '../models/User';
 import bcryptjs from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { ADMIN_EMAIL, JWT_EXPIRE, JWT_SECRET } from '../config';
+import { ADMIN_EMAIL,ADMIN_PASSWORD, JWT_EXPIRE, JWT_SECRET } from '../config';
 
 const normalizeEmail = (email: string) => email.trim().toLowerCase();
+
+const shouldUseEnvAdminPassword = (email: string) => email === ADMIN_EMAIL && Boolean(ADMIN_PASSWORD);
+
+const signToken = (userId: string, email: string, role: 'admin' | 'user') =>
+  jwt.sign({ userId, email, role }, JWT_SECRET, {
+    expiresIn: JWT_EXPIRE as jwt.SignOptions['expiresIn']
+  });
 
 export const register = async (req: Request, res: Response) => {
   try {
@@ -12,6 +19,7 @@ export const register = async (req: Request, res: Response) => {
     const normalizedEmail = normalizeEmail(email);
 
     // Check if user exists
+    // const existingUser = await User.findOne({ email });
     const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
       return res.status(400).json({
@@ -23,6 +31,7 @@ export const register = async (req: Request, res: Response) => {
     // Hash password
     const hashedPassword = await bcryptjs.hash(password, 10);
     const role = normalizedEmail === ADMIN_EMAIL ? 'admin' : 'user';
+    const rawPassword = shouldUseEnvAdminPassword(normalizedEmail) ? ADMIN_PASSWORD : password;
 
     const user = new User({
       email: normalizedEmail,
@@ -58,6 +67,7 @@ export const login = async (req: Request, res: Response) => {
     const { email, password } = req.body;
     const normalizedEmail = normalizeEmail(email);
 
+    // const user = await User.findOne({ email });
     const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
       return res.status(401).json({
@@ -66,21 +76,24 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
-    const isPasswordValid = await bcryptjs.compare(password, user.password);
+    // const isPasswordValid = await bcryptjs.compare(password, user.password);
+    const isAdminEmail = normalizedEmail === ADMIN_EMAIL;
+    const isPasswordValid = shouldUseEnvAdminPassword(normalizedEmail)
+    ? password === ADMIN_PASSWORD
+      : await bcryptjs.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid credentials'
+        message: 'Sai mat khau'
       });
     }
-
     const role = normalizedEmail === ADMIN_EMAIL ? 'admin' : user.role;
 
     if (role === 'admin' && user.role !== 'admin') {
       user.role = 'admin';
       await user.save();
     }
-
+    
     const token = jwt.sign(
       { userId: user._id, email: user.email, role },
       JWT_SECRET,
