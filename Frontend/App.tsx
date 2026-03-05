@@ -15,8 +15,8 @@ import Orders from './pages/Orders';
 import OrderDetailView from './pages/OrderDetailView';
 import CartDrawer from './components/CartDrawer';
 import CRM from './pages/CRM';
-import { Product, Category, Coupon, User, CartItem, Order, AppSettings } from './types';
-import { INITIAL_CATEGORIES, INITIAL_PRODUCTS, INITIAL_COUPONS, INITIAL_USERS } from './constants';
+import { Product, Category, Coupon, User, CartItem, Order, AppSettings, BlogPost as BlogPostType } from './types';
+import { api } from './services';
 
 type Page = 'home' | 'blog' | 'shop' | 'product-detail' | 'admin' | 'crm' | 'login' | 'checkout' | 'order-success' | 'orders' | 'order-detail';
 
@@ -27,10 +27,11 @@ const App: React.FC = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   
   // App Data State
-  const [categories] = useState<Category[]>(INITIAL_CATEGORIES);
-  const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
-  const [users, setUsers] = useState<User[]>(INITIAL_USERS);
-  const [coupons] = useState<Coupon[]>(INITIAL_COUPONS);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [blogPosts, setBlogPosts] = useState<BlogPostType[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [latestOrder, setLatestOrder] = useState<Order | null>(null);
@@ -44,25 +45,42 @@ const App: React.FC = () => {
     inventory: { manageStock: true, lowStockAlert: true, alertEmail: 'admin@shop.com' }
   });
 
-  // Load persistence
+  // Load persistence + backend data
   useEffect(() => {
     const savedUser = localStorage.getItem('shop_user');
     if (savedUser) setCurrentUser(JSON.parse(savedUser));
-    
+
     const savedOrders = localStorage.getItem('shop_orders');
     if (savedOrders) setOrders(JSON.parse(savedOrders));
 
-    const savedProducts = localStorage.getItem('shop_products');
-    if (savedProducts) setProducts(JSON.parse(savedProducts));
+    const loadData = async () => {
+      try {
+        const [productsData, categoriesData, couponsData, usersData, blogsData] = await Promise.all([
+          api.getProducts(),
+          api.getCategories(),
+          api.getCoupons(),
+          api.getUsers(),
+          api.getBlogPosts()
+        ]);
+
+        setProducts(productsData);
+        setCategories(categoriesData);
+        setCoupons(couponsData);
+        setUsers(usersData);
+        setBlogPosts(blogsData);
+      } catch (error) {
+        console.error('Không thể tải dữ liệu từ backend:', error);
+        alert('Không thể kết nối backend. Vui lòng kiểm tra server API đang chạy.');
+      }
+    };
+
+    loadData();
   }, []);
 
   useEffect(() => {
     localStorage.setItem('shop_orders', JSON.stringify(orders));
   }, [orders]);
 
-  useEffect(() => {
-    localStorage.setItem('shop_products', JSON.stringify(products));
-  }, [products]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -195,8 +213,8 @@ const App: React.FC = () => {
       />
 
       <main className="flex-grow bg-white">
-        {currentPage === 'home' && <Home onNavigateBlog={() => handleNavigate('blog')} />}
-        {currentPage === 'blog' && <BlogPost />}
+        {currentPage === 'home' && <Home onNavigateBlog={() => handleNavigate('blog')} blogPosts={blogPosts} products={products} />}
+        {currentPage === 'blog' && <BlogPost posts={blogPosts} />}
         {currentPage === 'shop' && <Shop products={products} categories={categories} onViewDetail={(p) => { setSelectedProduct(p); setCurrentPage('product-detail'); }} />}
         {currentPage === 'orders' && <Orders orders={orders.filter(o => o.userId === currentUser?.id || o.userId === 'guest')} onViewDetail={handleViewOrderDetail} />}
         
@@ -239,9 +257,18 @@ const App: React.FC = () => {
         {currentPage === 'admin' && (
           <Admin 
             products={products} categories={categories} coupons={coupons} settings={settings} orders={orders}
-            onAddProduct={(p) => setProducts([p, ...products])}
-            onUpdateProduct={(p) => setProducts(products.map(old => old.id === p.id ? p : old))}
-            onDeleteProduct={(id) => setProducts(products.filter(p => p.id !== id))}
+            onAddProduct={async (p) => {
+              const created = await api.createProduct(p);
+              setProducts([created, ...products]);
+            }}
+            onUpdateProduct={async (p) => {
+              const updated = await api.updateProduct(p);
+              setProducts(products.map(old => old.id === updated.id ? updated : old));
+            }}
+            onDeleteProduct={async (id) => {
+              await api.deleteProduct(id);
+              setProducts(products.filter(p => p.id !== id));
+            }}
             onUpdateSettings={setSettings}
             onNavigateCRM={() => handleNavigate('crm')}
           />

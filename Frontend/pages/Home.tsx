@@ -1,13 +1,15 @@
 
 import React from 'react';
 import { Play, Star, ChevronRight, ShoppingBag } from 'lucide-react';
-import { FEATURED_FOODS, BLOG_POSTS } from '../constants';
+import { BlogPost, Product } from '../types';
 
 interface HomeProps {
   onNavigateBlog: () => void;
+  blogPosts: BlogPost[];
+  products: Product[];
 }
 
-const Home: React.FC<HomeProps> = ({ onNavigateBlog }) => {
+const Home: React.FC<HomeProps> = ({ onNavigateBlog, blogPosts, products }) => {
   return (
     <div className="pt-20">
       {/* Hero Section */}
@@ -72,28 +74,20 @@ const Home: React.FC<HomeProps> = ({ onNavigateBlog }) => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {FEATURED_FOODS.map((food) => (
+            {products.slice(0, 2).map((food, index) => (
               <div key={food.id} className="group bg-white rounded-[2rem] overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300">
                 <div className="relative h-72 overflow-hidden">
                   <img src={food.image} alt={food.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                  {food.isBestSeller && (
-                    <span className="absolute top-6 left-6 bg-[#ff5c62] text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                      Best Seller
-                    </span>
-                  )}
                 </div>
                 <div className="p-8 flex items-center justify-between">
                   <div>
                     <h3 className="text-2xl font-bold text-slate-900 mb-2">{food.name}</h3>
                     <p className="text-slate-500 mb-4">{food.description}</p>
                     <div className="flex items-center gap-8">
-                        <span className="text-xl font-bold text-[#ff5c62]">{food.price}</span>
-                        {food.id === '2' && (
-                            <button className="text-[#ff5c62] font-bold text-sm hover:underline">Thêm giỏ hàng</button>
-                        )}
+                        <span className="text-xl font-bold text-[#ff5c62]">{(food.salePrice || food.price).toLocaleString('vi-VN')}đ</span>
                     </div>
                   </div>
-                  {food.id === '1' && (
+                  {index === 0 && (
                     <button className="w-12 h-12 bg-red-50 text-[#ff5c62] rounded-2xl flex items-center justify-center hover:bg-[#ff5c62] hover:text-white transition-colors">
                         <ShoppingBag size={20} />
                     </button>
@@ -121,7 +115,7 @@ const Home: React.FC<HomeProps> = ({ onNavigateBlog }) => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {BLOG_POSTS.map((post) => (
+          {blogPosts.slice(0, 3).map((post) => (
             <div 
                 key={post.id} 
                 className="group cursor-pointer"
