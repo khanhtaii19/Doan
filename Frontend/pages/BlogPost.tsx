@@ -1,10 +1,18 @@
 
 import React from 'react';
 import { ChevronRight, Share2, Bookmark } from 'lucide-react';
-import { DETAILED_POST, BLOG_POSTS } from '../constants';
+import { BlogPost as BlogPostType } from '../types';
 
-const BlogPost: React.FC = () => {
-  const post = DETAILED_POST;
+interface BlogPostProps {
+  posts: BlogPostType[];
+}
+
+const BlogPost: React.FC<BlogPostProps> = ({ posts }) => {
+  const post = posts[0];
+
+  if (!post) {
+    return <div className="pt-24 pb-20 text-center text-slate-500">Chưa có bài viết từ backend.</div>;
+  }
 
   return (
     <div className="pt-24 pb-20">
@@ -79,7 +87,7 @@ const BlogPost: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4">
           <h2 className="text-3xl font-extrabold text-slate-900 text-center mb-16">Các bài viết liên quan</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {BLOG_POSTS.map((related) => (
+            {posts.slice(1, 4).map((related) => (
               <div key={related.id} className="group cursor-pointer">
                 <div className="aspect-[4/3] rounded-2xl overflow-hidden mb-5">
                    <img src={related.image} alt={related.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
