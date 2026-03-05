@@ -35,6 +35,7 @@ MONGODB_URI=mongodb://localhost:27017/gourmet-shop
 JWT_SECRET=your_super_secret_jwt_key_change_this_in_production
 JWT_EXPIRE=7d
 CORS_ORIGIN=http://localhost:5173
+ADMIN_EMAIL=admin@shop.com
 ```
 
 **⚠️ Lưu ý:** 

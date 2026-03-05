@@ -6,6 +6,8 @@ import productRoutes from './routes/productRoutes';
 import orderRoutes from './routes/orderRoutes';
 import authRoutes from './routes/authRoutes';
 import blogRoutes from './routes/blogRoutes';
+import categoryRoutes from './routes/categoryRoutes';
+import couponRoutes from './routes/couponRoutes';
 
 dotenv.config();
 
@@ -28,6 +30,8 @@ app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/blog', blogRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/coupons', couponRoutes);
 
 // Health check
 app.get('/health', (req: Request, res: Response) => {

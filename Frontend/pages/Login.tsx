@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 // Added X to the import list to fix "Cannot find name 'X'" error
 import { Mail, Lock, User as UserIcon, ArrowRight, Github, Chrome, X } from 'lucide-react';
 import { User } from '../types';
+import { api } from '../services';
 
 interface LoginProps {
   onLogin: (user: User) => void;
@@ -15,39 +16,25 @@ const Login: React.FC<LoginProps> = ({ onLogin, onBack }) => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Mock authentication logic
-    if (isRegister) {
-      const newUser: User = {
-        id: `u-${Date.now()}`,
-        email,
-        name,
-        role: 'user',
-        avatar: `https://ui-avatars.com/api/?name=${name}&background=ff5c62&color=fff`
-      };
-      onLogin(newUser);
-    } else {
-      // Check for hardcoded accounts
-      if (email === 'admin@shop.com' && password === 'admin123') {
-        onLogin({
-          id: 'admin-1',
-          email: 'admin@shop.com',
-          name: 'Phạm Khánh Tài',
-          role: 'admin',
-          avatar: 'https://picsum.photos/id/64/100/100'
-        });
-      } else if (email === 'user@shop.com' && password === 'user123') {
-        onLogin({
-          id: 'user-1',
-          email: 'user@shop.com',
-          name: 'Khách hàng 01',
-          role: 'user'
-        });
-      } else {
-        alert('Thông tin đăng nhập không chính xác!\nAdmin: admin@shop.com / admin123\nUser: user@shop.com / user123');
+
+    try {
+      if (isRegister) {
+        await api.register(name, email, password);
       }
+
+      const loginResult = await api.login(email, password);
+      const userData = loginResult.data;
+
+      onLogin({
+        ...userData,
+        avatar: userData.avatar || `https://ui-avatars.com/api/?name=${userData.name}&background=ff5c62&color=fff`
+      });
+
+      localStorage.setItem('shop_token', loginResult.token);
+    } catch (error) {
+      alert('Đăng nhập/đăng ký thất bại. Vui lòng kiểm tra backend và thông tin tài khoản.');
     }
   };
 

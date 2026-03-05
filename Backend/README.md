@@ -24,6 +24,7 @@ PORT=5000
 MONGODB_URI=mongodb://localhost:27017/gourmet-shop
 JWT_SECRET=your_secret_key
 CORS_ORIGIN=http://localhost:5173
+ADMIN_EMAIL=admin@shop.com
 ```
 
 ### 3. Chạy server ở chế độ development
@@ -103,4 +104,5 @@ Backend/
 
 - Thay đổi `MONGODB_URI` trong `.env` để kết nối với MongoDB Atlas
 - Luôn thay đổi `JWT_SECRET` khi deploy
+- Đặt `ADMIN_EMAIL` trong `.env` để email này luôn đăng nhập với quyền `admin`
 - Thêm authentication middleware cho các route cần bảo vệ
