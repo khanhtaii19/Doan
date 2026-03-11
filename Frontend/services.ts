@@ -1,137 +1,136 @@
-import { BlogPost, Category, Coupon, Product, User } from './types';
+const API_BASE = 'http://localhost:5000/api';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+export const getToken = () => localStorage.getItem('shop_token');
 
-type ApiResponse<T> = {
-  success: boolean;
-  data: T;
-  message?: string;
+const authHeaders = () => ({
+  'Content-Type': 'application/json',
+  ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {})
+});
+
+const handleResponse = async (res: Response) => {
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || `HTTP ${res.status}`);
+  }
+  return data;
 };
 
-const toId = (value: any) => value?.id || value?._id || '';
-
-const formatDate = (date: string | Date) =>
-  new Date(date).toLocaleDateString('vi-VN', { day: '2-digit', month: 'long', year: 'numeric' });
-
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options?.headers || {})
-    },
-    ...options
-  });
-
-  const payload: ApiResponse<T> = await response.json();
-
-  if (!response.ok || !payload.success) {
-    throw new Error(payload.message || 'API request failed');
-  }
-
-  return payload.data;
-}
-
 export const api = {
-  async getProducts(): Promise<Product[]> {
-    const data = await request<any[]>('/products');
-    return data.map((item) => ({ ...item, id: toId(item) }));
-  },
-
-  async createProduct(product: Product): Promise<Product> {
-    const data = await request<any>('/products', {
-      method: 'POST',
-      body: JSON.stringify(product)
-    });
-    return { ...data, id: toId(data) };
-  },
-
-  async updateProduct(product: Product): Promise<Product> {
-    const data = await request<any>(`/products/${product.id}`, {
-      method: 'PUT',
-      body: JSON.stringify(product)
-    });
-    return { ...data, id: toId(data) };
-  },
-
-  async deleteProduct(id: string): Promise<void> {
-    await request(`/products/${id}`, { method: 'DELETE' });
-  },
-
-  async getCategories(): Promise<Category[]> {
-    const data = await request<any[]>('/categories');
-    return data.map((item) => ({ ...item, id: toId(item) }));
-  },
-
-  async getCoupons(): Promise<Coupon[]> {
-    const data = await request<any[]>('/coupons');
-    return data.map((item) => ({
-      code: item.code,
-      discountPercent: item.discountPercent,
-      limit: item.limit,
-      usedCount: item.usedCount,
-      expiryDate: new Date(item.expiryDate).toISOString().slice(0, 10)
-    }));
-  },
-
-  async getUsers(): Promise<User[]> {
-    const data = await request<any[]>('/auth/users');
-    return data.map((item) => ({
-      id: toId(item),
-      email: item.email,
-      name: item.name,
-      role: item.role,
-      phone: item.phone,
-      memberLevel: item.memberLevel,
-      totalSpent: item.totalSpent,
-      joinedAt: item.createdAt,
-      avatar: item.avatar
-    }));
-  },
-
-  async login(email: string, password: string): Promise<{ token: string; data: User }> {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+  login: async (email: string, password: string) => {
+    const res = await fetch(`${API_BASE}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
     });
-
-    const payload = await response.json();
-    if (!response.ok || !payload.success) {
-      throw new Error(payload.message || 'Login failed');
-    }
-
-    return {
-      token: payload.token,
-      data: { ...payload.data, id: toId(payload.data) }
-    };
+    return handleResponse(res);
   },
 
-  async register(name: string, email: string, password: string, phone?: string): Promise<User> {
-    const data = await request<any>('/auth/register', {
+  register: async (name: string, email: string, password: string) => {
+    const res = await fetch(`${API_BASE}/auth/register`, {
       method: 'POST',
-      body: JSON.stringify({ name, email, password, phone })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password })
     });
-
-    return { ...data, id: toId(data), role: data.role || 'user' };
+    return handleResponse(res);
   },
 
-  async getBlogPosts(): Promise<BlogPost[]> {
-    const data = await request<any[]>('/blog');
-    return data.map((item) => ({
-      id: toId(item),
-      title: item.title,
-      excerpt: item.excerpt,
-      date: formatDate(item.date),
-      category: item.category,
-      image: item.image,
-      author: item.author
-        ? {
-            ...item.author,
-            date: formatDate(item.date)
-          }
-        : undefined,
-      content: item.content,
-      tags: item.tags
+  getMe: async () => {
+    const res = await fetch(`${API_BASE}/auth/me`, { headers: authHeaders() });
+    return handleResponse(res);
+  },
+
+  getUsers: async () => {
+    const res = await fetch(`${API_BASE}/auth/users`, { headers: authHeaders() });
+    const data = await handleResponse(res);
+    return data.data.map((u: any) => ({ ...u, id: u._id || u.id }));
+  },
+
+  getProducts: async () => {
+    const res = await fetch(`${API_BASE}/products`);
+    const data = await handleResponse(res);
+    return data.data.map((p: any) => ({ ...p, id: p._id || p.id }));
+  },
+
+  createProduct: async (product: any) => {
+    const res = await fetch(`${API_BASE}/products`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify(product)
+    });
+    const data = await handleResponse(res);
+    return { ...data.data, id: data.data._id || data.data.id };
+  },
+
+  updateProduct: async (product: any) => {
+    const res = await fetch(`${API_BASE}/products/${product.id}`, {
+      method: 'PUT',
+      headers: authHeaders(),
+      body: JSON.stringify(product)
+    });
+    const data = await handleResponse(res);
+    return { ...data.data, id: data.data._id || data.data.id };
+  },
+
+  deleteProduct: async (id: string) => {
+    const res = await fetch(`${API_BASE}/products/${id}`, {
+      method: 'DELETE',
+      headers: authHeaders()
+    });
+    return handleResponse(res);
+  },
+
+  getCategories: async () => {
+    const res = await fetch(`${API_BASE}/categories`);
+    const data = await handleResponse(res);
+    return data.data.map((c: any) => ({ ...c, id: c._id || c.id }));
+  },
+
+  getCoupons: async () => {
+    const res = await fetch(`${API_BASE}/coupons`);
+    const data = await handleResponse(res);
+    return data.data.map((c: any) => ({
+      ...c,
+      id: c._id || c.id,
+      expiryDate: c.expiryDate?.split('T')[0] ?? c.expiryDate
+    }));
+  },
+
+  getOrders: async (userId?: string) => {
+    const url = userId
+      ? `${API_BASE}/orders?userId=${userId}`
+      : `${API_BASE}/orders`;
+    const res = await fetch(url, { headers: authHeaders() });
+    const data = await handleResponse(res);
+    return data.data.map((o: any) => ({ ...o, id: o._id || o.id }));
+  },
+
+  createOrder: async (order: any) => {
+    const res = await fetch(`${API_BASE}/orders`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify(order)
+    });
+    const data = await handleResponse(res);
+    return { ...data.data, id: data.data._id || data.data.id };
+  },
+
+  updateOrderStatus: async (orderId: string, status: string) => {
+    const res = await fetch(`${API_BASE}/orders/${orderId}/status`, {
+      method: 'PUT',
+      headers: authHeaders(),
+      body: JSON.stringify({ status })
+    });
+    const data = await handleResponse(res);
+    return { ...data.data, id: data.data._id || data.data.id };
+  },
+
+  getBlogPosts: async () => {
+    const res = await fetch(`${API_BASE}/blog`);
+    const data = await handleResponse(res);
+    return data.data.map((p: any) => ({
+      ...p,
+      id: p._id || p.id,
+      date: p.date?.split('T')[0] ?? p.date
     }));
   }
 };

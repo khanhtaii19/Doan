@@ -3,17 +3,12 @@ import Order from '../models/Order';
 
 export const getOrders = async (req: Request, res: Response) => {
   try {
-    const orders = await Order.find();
-    res.json({
-      success: true,
-      data: orders
-    });
+    const { userId } = req.query;
+    const filter = userId ? { userId: String(userId) } : {};
+    const orders = await Order.find(filter).sort({ createdAt: -1 });
+    res.json({ success: true, data: orders });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error fetching orders',
-      error
-    });
+    res.status(500).json({ success: false, message: 'Error fetching orders', error });
   }
 };
 
@@ -21,17 +16,9 @@ export const createOrder = async (req: Request, res: Response) => {
   try {
     const order = new Order(req.body);
     await order.save();
-    res.status(201).json({
-      success: true,
-      data: order,
-      message: 'Order created successfully'
-    });
+    res.status(201).json({ success: true, data: order, message: 'Order created successfully' });
   } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: 'Error creating order',
-      error
-    });
+    res.status(400).json({ success: false, message: 'Error creating order', error });
   }
 };
 
@@ -44,21 +31,10 @@ export const updateOrderStatus = async (req: Request, res: Response) => {
       { new: true, runValidators: true }
     );
     if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: 'Order not found'
-      });
+      return res.status(404).json({ success: false, message: 'Order not found' });
     }
-    res.json({
-      success: true,
-      data: order,
-      message: 'Order status updated successfully'
-    });
+    res.json({ success: true, data: order, message: 'Order status updated successfully' });
   } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: 'Error updating order',
-      error
-    });
+    res.status(400).json({ success: false, message: 'Error updating order', error });
   }
 };

@@ -52,6 +52,7 @@ const seedDatabase = async () => {
         email: 'admin@shop.com',
         password: hashedPassword,
         role: 'admin',
+        memberLevel:'Diamond',
         avatar: 'https://i.pravatar.cc/150?u=admin'
       }
     ]);
@@ -148,7 +149,7 @@ const seedDatabase = async () => {
         category: 'Mẹo nấu ăn',
         image: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?q=80&w=1974&auto=format&fit=crop',
         author: {
-          name: 'Phạm Khánh An',
+          name: 'Phạm Khánh Tài',
           avatar: 'https://picsum.photos/id/64/100/100',
           readTime: '5 phút đọc'
         },
@@ -162,7 +163,7 @@ const seedDatabase = async () => {
         category: 'Sống khỏe',
         image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=2070&auto=format&fit=crop',
         author: {
-          name: 'Phạm Khánh An',
+          name: 'Phạm Khánh Tài',
           avatar: 'https://picsum.photos/id/64/100/100',
           readTime: '8 phút đọc'
         },

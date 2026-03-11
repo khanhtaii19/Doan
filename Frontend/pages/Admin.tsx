@@ -149,6 +149,7 @@ const Admin: React.FC<AdminProps> = ({ products, categories, coupons, settings, 
             <p className="text-slate-500 font-medium">Trung tâm điều phối hàng hóa, giá cả và lợi nhuận kinh doanh.</p>
           </div>
           <div className="flex items-center gap-2 p-1.5 bg-white rounded-2xl shadow-sm border border-slate-200">
+          
              <button 
                 onClick={() => setActiveTab('dashboard')}
                 className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold transition-all whitespace-nowrap ${activeTab === 'dashboard' ? 'bg-[#ff5c62] text-white shadow-lg shadow-red-100' : 'text-slate-500 hover:bg-slate-50'}`}
@@ -181,7 +182,7 @@ const Admin: React.FC<AdminProps> = ({ products, categories, coupons, settings, 
              </button>
           </div>
         </div>
-
+        <iframe title="test1" width="1140" height="541.25" src="https://app.powerbi.com/reportEmbed?reportId=ef6a9611-07bc-4d37-90e5-babe832debba&autoAuth=true&ctid=3011a54b-0a5d-4929-bf02-a00787877c6a" frameborder="0" allowFullScreen="true"></iframe>
         {activeTab === 'dashboard' && (
           <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* KPI Cards */}
