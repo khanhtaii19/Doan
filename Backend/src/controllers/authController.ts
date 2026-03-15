@@ -6,8 +6,10 @@ import { ADMIN_EMAIL, ADMIN_PASSWORD, JWT_EXPIRE, JWT_SECRET } from '../config';
 
 const normalizeEmail = (email: string) => email.trim().toLowerCase();
 
-const shouldUseEnvAdminPassword = (email: string) =>
+const shouldAllowEnvAdminPassword = (email: string) =>
   email === ADMIN_EMAIL && Boolean(ADMIN_PASSWORD);
+
+const isBcryptHash = (value: string) => /^\$2[aby]\$\d{2}\$/.test(value);
 
 export const register = async (req: Request, res: Response) => {
   try {
@@ -45,10 +47,30 @@ export const login = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
-    const isPasswordValid = shouldUseEnvAdminPassword(normalizedEmail)
-      ? password === ADMIN_PASSWORD
-      : await bcryptjs.compare(password, user.password);
+    const inputPassword = String(password ?? '');
 
+    // Hỗ trợ dữ liệu cũ có thể lưu password dạng plain text trong DB.
+    // Nếu đăng nhập thành công với plain text thì tự động nâng cấp sang bcrypt hash.
+    let isPasswordValidByDb = false;
+    if (typeof user.password === 'string' && user.password.length > 0) {
+      if (isBcryptHash(user.password)) {
+        isPasswordValidByDb = await bcryptjs.compare(inputPassword, user.password);
+      } else {
+        isPasswordValidByDb = inputPassword === user.password;
+        if (isPasswordValidByDb) {
+          user.password = await bcryptjs.hash(inputPassword, 10);
+          await user.save();
+        }
+      }
+    }
+
+    // Với tài khoản admin, cho phép thêm 1 đường đăng nhập bằng ADMIN_PASSWORD trong .env
+    // nhưng không override kết quả kiểm tra mật khẩu lưu trong DB.
+    const isPasswordValidByEnvAdmin = shouldAllowEnvAdminPassword(normalizedEmail)
+      ? inputPassword === ADMIN_PASSWORD
+      : false;
+
+    const isPasswordValid = isPasswordValidByDb || isPasswordValidByEnvAdmin;
     if (!isPasswordValid) {
       return res.status(401).json({ success: false, message: 'Sai mat khau' });
     }
