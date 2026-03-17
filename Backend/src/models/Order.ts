@@ -5,6 +5,8 @@ export interface IOrder extends Document {
   userId: string;
   items: {
     productId: string;
+    productName: string;
+    productImage: string;
     quantity: number;
     price: number;
   }[];
@@ -12,7 +14,18 @@ export interface IOrder extends Document {
   discountAmount: number;
   finalAmount: number;
   couponCode?: string;
-  status: 'pending' | 'paid' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  // ─── Thông tin khách hàng đầy đủ ───────────────────────────────
+  customerInfo: {
+    name: string;
+    phone: string;
+    email: string;
+    province: string;
+    district: string;
+    ward: string;
+    addressDetail: string;
+  };
+  // ─── Địa chỉ giao hàng (giữ lại để tương thích) ─────────────────
   shippingAddress: {
     street: string;
     city: string;
@@ -21,6 +34,7 @@ export interface IOrder extends Document {
     country: string;
   };
   paymentMethod: 'credit_card' | 'cash' | 'bank_transfer';
+  originalPaymentMethod?: string;
   notes?: string;
 }
 
@@ -30,6 +44,8 @@ const orderSchema = new Schema<IOrder>(
     items: [
       {
         productId: { type: String, required: true },
+        productName: { type: String, default: '' },   // ← tên sản phẩm lúc đặt hàng
+        productImage: { type: String, default: '' },  // ← ảnh sản phẩm lúc đặt hàng
         quantity: { type: Number, required: true },
         price: { type: Number, required: true }
       }
@@ -38,23 +54,35 @@ const orderSchema = new Schema<IOrder>(
     discountAmount: { type: Number, default: 0 },
     finalAmount: { type: Number, required: true },
     couponCode: { type: String },
+    // ─── customerInfo ────────────────────────────────────────────
+    customerInfo: {
+      name: { type: String, default: '' },
+      phone: { type: String, default: '' },
+      email: { type: String, default: '' },
+      province: { type: String, default: '' },
+      district: { type: String, default: '' },
+      ward: { type: String, default: '' },
+      addressDetail: { type: String, default: '' }
+    },
+    // ─── shippingAddress (giữ lại) ───────────────────────────────
+    shippingAddress: {
+      street: { type: String, default: '' },
+      city: { type: String, default: '' },
+      state: { type: String, default: '' },
+      zipCode: { type: String, default: '' },
+      country: { type: String, default: '' }
+    },
     status: {
       type: String,
-      enum: ['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'],
+      enum: ['pending', 'processing', 'shipped', 'delivered', 'cancelled'],
       default: 'pending'
-    },
-    shippingAddress: {
-      street: { type: String, required: true },
-      city: { type: String, required: true },
-      state: { type: String, required: true },
-      zipCode: { type: String, required: true },
-      country: { type: String, required: true }
     },
     paymentMethod: {
       type: String,
       enum: ['credit_card', 'cash', 'bank_transfer'],
       required: true
     },
+    originalPaymentMethod: { type: String },
     notes: { type: String }
   },
   { timestamps: true }

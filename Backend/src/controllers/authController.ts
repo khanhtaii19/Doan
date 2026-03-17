@@ -11,6 +11,7 @@ const shouldAllowEnvAdminPassword = (email: string) =>
 
 const isBcryptHash = (value: string) => /^\$2[aby]\$\d{2}\$/.test(value);
 
+
 export const register = async (req: Request, res: Response) => {
   try {
     const { email, password, name, phone } = req.body;
@@ -87,7 +88,6 @@ export const login = async (req: Request, res: Response) => {
       JWT_SECRET,
       { expiresIn: JWT_EXPIRE as jwt.SignOptions['expiresIn'] }
     );
-
     res.json({
       success: true,
       message: 'Login successful',
@@ -95,6 +95,7 @@ export const login = async (req: Request, res: Response) => {
       data: { id: user._id, email: user.email, name: user.name, role, avatar: user.avatar }
     });
   } catch (error) {
+    console.error('LOGIN ERROR:', error);
     res.status(500).json({ success: false, message: 'Error logging in', error });
   }
 };
@@ -141,3 +142,4 @@ export const getUsers = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: 'Error fetching users', error });
   }
 };
+
