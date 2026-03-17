@@ -3,7 +3,6 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import Home from './pages/Home';
 import BlogPost from './pages/BlogPost';
-// import WelcomePopup from './components/WelcomePopup';
 import Shop from './pages/Shop';
 import ProductDetailView from './pages/ProductDetailView';
 import Admin from './pages/Admin';
@@ -19,7 +18,6 @@ import { api } from './services';
 
 type Page = 'home' | 'blog' | 'shop' | 'product-detail' | 'admin' | 'crm' | 'login' | 'checkout' | 'order-success' | 'orders' | 'order-detail';
 
-// Map paymentMethod từ frontend sang enum backend chấp nhận
 const mapPaymentMethod = (method: string): 'credit_card' | 'cash' | 'bank_transfer' => {
   if (method === 'cod') return 'cash';
   if (method === 'transfer') return 'bank_transfer';
@@ -27,9 +25,74 @@ const mapPaymentMethod = (method: string): 'credit_card' | 'cash' | 'bank_transf
   return 'cash';
 };
 
+// ─── Chuyển order từ DB sang Order type frontend ─────────────────────────────
+// Nhận thêm products[] để fallback tên/ảnh cho order cũ chưa lưu productName
+const mapDbOrderToFrontend = (dbOrder: any, products: Product[] = []): Order => {
+  // 1. customerInfo: lấy trực tiếp hoặc parse từ notes (order cũ)
+  let customerInfo = dbOrder.customerInfo;
+  if (!customerInfo || !customerInfo.name) {
+    try {
+      const parsed = JSON.parse(dbOrder.notes || '{}');
+      customerInfo = parsed.customerInfo || {};
+    } catch {
+      customerInfo = {};
+    }
+  }
+
+  // 2. paymentMethod: lấy originalPaymentMethod hoặc map ngược từ backend enum
+  let paymentMethod: Order['paymentMethod'] = 'cod';
+  if (dbOrder.originalPaymentMethod) {
+    paymentMethod = dbOrder.originalPaymentMethod as Order['paymentMethod'];
+  } else {
+    const pm = dbOrder.paymentMethod;
+    if (pm === 'cash') paymentMethod = 'cod';
+    else if (pm === 'bank_transfer') paymentMethod = 'transfer';
+    else if (pm === 'credit_card') paymentMethod = 'momo';
+  }
+
+  // 3. items: dùng productName/productImage từ DB nếu có
+  //    fallback tìm trong products state (cho order cũ)
+  const items: CartItem[] = (dbOrder.items || []).map((item: any) => {
+    const matched = products.find(p => p.id === item.productId);
+    return {
+      product: {
+        id: item.productId,
+        name: item.productName || matched?.name || `Sản phẩm #${String(item.productId).slice(-4)}`,
+        price: item.price,
+        salePrice: item.price,
+        image: item.productImage || matched?.image || '',
+        categoryId: matched?.categoryId || '',
+        description: matched?.description || '',
+        details: matched?.details || '',
+        stock: matched?.stock,
+        totalSold: matched?.totalSold,
+      },
+      quantity: item.quantity
+    };
+  });
+
+  return {
+    id: dbOrder._id || dbOrder.id,
+    userId: dbOrder.userId,
+    items,
+    totalAmount: dbOrder.totalAmount,
+    customerInfo: {
+      name: customerInfo.name || '',
+      phone: customerInfo.phone || '',
+      email: customerInfo.email || '',
+      province: customerInfo.province || '',
+      district: customerInfo.district || '',
+      ward: customerInfo.ward || '',
+      addressDetail: customerInfo.addressDetail || ''
+    },
+    paymentMethod,
+    status: dbOrder.status as Order['status'],
+    createdAt: dbOrder.createdAt || new Date().toISOString()
+  };
+};
+
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<Page>('home');
-  const [showPopup, setShowPopup] = useState(true);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
@@ -50,7 +113,7 @@ const App: React.FC = () => {
     inventory: { manageStock: true, lowStockAlert: true, alertEmail: 'admin@shop.com' }
   });
 
-  // ─── Restore session từ token khi app khởi động ─────────
+  // ─── Restore session ─────────────────────────────────────
   useEffect(() => {
     const token = localStorage.getItem('shop_token');
     if (!token) return;
@@ -63,12 +126,10 @@ const App: React.FC = () => {
           avatar: u.avatar || `https://ui-avatars.com/api/?name=${u.name}&background=ff5c62&color=fff`
         });
       })
-      .catch(() => {
-        localStorage.removeItem('shop_token');
-      });
+      .catch(() => localStorage.removeItem('shop_token'));
   }, []);
 
-  // ─── Load data từ backend, KHÔNG alert khi lỗi ──────────
+  // ─── Load data ───────────────────────────────────────────
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -83,48 +144,49 @@ const App: React.FC = () => {
         setCoupons(couponsData);
         setBlogPosts(blogsData);
       } catch (error) {
-        // Chỉ log, không alert để không block app
-        console.error('Không thể tải dữ liệu từ backend:', error);
+        console.error('Không thể tải dữ liệu:', error);
       }
-
-      // getUsers có thể fail nếu chưa login — load riêng
       try {
         const usersData = await api.getUsers();
         setUsers(usersData);
-      } catch {
-        // bình thường nếu chưa auth
-      }
+      } catch { /* chưa auth */ }
     };
     loadData();
   }, []);
 
-  // ─── Load orders khi user thay đổi ──────────────────────
-  useEffect(() => {
-    if (!currentUser) {
-      setOrders([]);
-      return;
+  // ─── Load orders (dùng lại được) ─────────────────────────
+  const loadOrders = async (user: User | null, productList: Product[] = products) => {
+    if (!user) { setOrders([]); return; }
+    try {
+      const data: any[] = await api.getOrders();
+      // Truyền productList vào để fallback tên/ảnh cho order cũ
+      const mapped = data.map(o => mapDbOrderToFrontend(o, productList));
+      const filtered = user.role === 'admin'
+        ? mapped
+        : mapped.filter(o => o.userId === user.id);
+      setOrders(filtered);
+    } catch (err) {
+      console.error('Không thể tải đơn hàng:', err);
     }
-    api.getOrders()
-      .then((data: Order[]) => {
-        const userOrders = currentUser.role === 'admin'
-          ? data
-          : data.filter((o: Order) => o.userId === currentUser.id);
-        setOrders(userOrders);
-      })
-      .catch((err: Error) => {
-        console.error('Không thể tải đơn hàng:', err);
-      });
-  }, [currentUser]);
+  };
+
+  useEffect(() => { loadOrders(currentUser); }, [currentUser]);
+
+  // Reload khi vào trang orders hoặc admin
+  useEffect(() => {
+    if ((currentPage === 'orders' || currentPage === 'admin') && currentUser) {
+      loadOrders(currentUser);
+    }
+  }, [currentPage]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentPage, selectedProduct, selectedOrder]);
 
-  // ─── Handlers ───────────────────────────────────────────
+  // ─── Handlers ────────────────────────────────────────────
   const handleNavigate = (page: Page) => {
     if (page === 'admin' && currentUser?.role !== 'admin') {
-      alert('Bạn không có quyền truy cập vào khu vực này!');
-      setCurrentPage('home');
+      alert('Bạn không có quyền truy cập!');
       return;
     }
     setCurrentPage(page);
@@ -132,7 +194,6 @@ const App: React.FC = () => {
     if (page !== 'order-detail') setSelectedOrder(null);
   };
 
-  // Token được lưu TRƯỚC khi set user và navigate
   const handleLogin = (user: User, token: string) => {
     localStorage.setItem('shop_token', token);
     setCurrentUser(user);
@@ -148,18 +209,16 @@ const App: React.FC = () => {
 
   const handleAddToCart = (product: Product, quantity: number = 1) => {
     const stock = product.stock ?? 0;
-    if (stock <= 0) { alert("Rất tiếc, món này đã hết."); return; }
+    if (stock <= 0) { alert('Rất tiếc, món này đã hết.'); return; }
     setCart(prev => {
       const existing = prev.find(item => item.product.id === product.id);
       const currentInCart = existing ? existing.quantity : 0;
-      const totalNewQuantity = currentInCart + quantity;
-      if (totalNewQuantity > stock) {
-        alert(`Chỉ có thể mua được ${stock} phần món ăn này. Bạn đã có ${currentInCart} phần trong giỏ.`);
+      const totalNew = currentInCart + quantity;
+      if (totalNew > stock) {
+        alert(`Chỉ còn ${stock} phần. Bạn đã có ${currentInCart} trong giỏ.`);
         return prev;
       }
-      if (existing) {
-        return prev.map(item => item.product.id === product.id ? { ...item, quantity: totalNewQuantity } : item);
-      }
+      if (existing) return prev.map(i => i.product.id === product.id ? { ...i, quantity: totalNew } : i);
       return [...prev, { product, quantity }];
     });
     setIsCartOpen(true);
@@ -167,13 +226,11 @@ const App: React.FC = () => {
 
   const handleUpdateCartQuantity = (productId: string, delta: number) => {
     setCart(prev => prev.map(item => {
-      if (item.product.id === productId) {
-        const stock = item.product.stock ?? 0;
-        const newQty = Math.max(1, item.quantity + delta);
-        if (delta > 0 && newQty > stock) { alert(`Chỉ có thể mua được ${stock} phần món này.`); return item; }
-        return { ...item, quantity: newQty };
-      }
-      return item;
+      if (item.product.id !== productId) return item;
+      const stock = item.product.stock ?? 0;
+      const newQty = Math.max(1, item.quantity + delta);
+      if (delta > 0 && newQty > stock) { alert(`Chỉ còn ${stock} phần.`); return item; }
+      return { ...item, quantity: newQty };
     }));
   };
 
@@ -185,19 +242,10 @@ const App: React.FC = () => {
     try {
       await api.updateOrderStatus(orderId, status);
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o));
-      if (selectedOrder?.id === orderId) {
-        setSelectedOrder(prev => prev ? { ...prev, status } : null);
-      }
-    } catch (err) {
-      console.error('Không thể cập nhật trạng thái:', err);
+      if (selectedOrder?.id === orderId) setSelectedOrder(prev => prev ? { ...prev, status } : null);
+    } catch {
       alert('Không thể cập nhật trạng thái. Vui lòng thử lại.');
     }
-  };
-
-  const sendEmailNotification = (order: Order) => {
-    setTimeout(() => {
-      alert(`📩 Email xác nhận đã gửi đến: ${order.customerInfo.email}`);
-    }, 1500);
   };
 
   const handleCompleteOrder = async (customerInfo: any, paymentMethod: any) => {
@@ -206,17 +254,26 @@ const App: React.FC = () => {
     );
     const totalAmount = subtotal + 30000;
 
-    // Payload khớp với Order schema của backend
     const orderPayload = {
       userId: currentUser?.id || 'guest',
       items: cart.map(item => ({
         productId: item.product.id,
+        productName: item.product.name,       // ← lưu vào DB
+        productImage: item.product.image,     // ← lưu vào DB
         quantity: item.quantity,
         price: item.product.salePrice || item.product.price
       })),
       totalAmount,
       finalAmount: totalAmount,
-      // Map shippingAddress theo đúng schema backend
+      customerInfo: {
+        name: customerInfo.name || '',
+        phone: customerInfo.phone || '',
+        email: customerInfo.email || '',
+        province: customerInfo.province || '',
+        district: customerInfo.district || '',
+        ward: customerInfo.ward || '',
+        addressDetail: customerInfo.addressDetail || ''
+      },
       shippingAddress: {
         street: customerInfo.addressDetail || '',
         city: customerInfo.district || '',
@@ -224,47 +281,39 @@ const App: React.FC = () => {
         zipCode: '700000',
         country: 'Vietnam'
       },
-      // Lưu customerInfo đầy đủ vào notes để hiển thị UI
-      notes: JSON.stringify({
-        customerInfo,
-        originalPaymentMethod: paymentMethod
-      }),
+      originalPaymentMethod: paymentMethod,
       paymentMethod: mapPaymentMethod(paymentMethod),
       status: 'processing'
     };
 
     try {
-      await api.createOrder(orderPayload);
+      const savedOrder = await api.createOrder(orderPayload);
 
-      // Order cho UI giữ đầy đủ thông tin frontend cần
+      // Tạo order hiển thị ngay (dùng cart hiện tại vì đã có đủ thông tin)
       const newOrder: Order = {
-        id: `ORD-${Date.now()}`,
+        id: savedOrder._id || savedOrder.id,
         userId: currentUser?.id || 'guest',
         items: [...cart],
         totalAmount,
         customerInfo,
         paymentMethod,
         status: 'processing',
-        createdAt: new Date().toISOString()
+        createdAt: savedOrder.createdAt || new Date().toISOString()
       };
 
+      // Cập nhật stock local
       setProducts(prev => prev.map(p => {
-        const cartItem = cart.find(ci => ci.product.id === p.id);
-        if (cartItem) {
-          return {
-            ...p,
-            stock: Math.max(0, (p.stock || 0) - cartItem.quantity),
-            totalSold: (p.totalSold || 0) + cartItem.quantity
-          };
-        }
-        return p;
+        const ci = cart.find(i => i.product.id === p.id);
+        if (!ci) return p;
+        return { ...p, stock: Math.max(0, (p.stock || 0) - ci.quantity), totalSold: (p.totalSold || 0) + ci.quantity };
       }));
 
       setOrders(prev => [newOrder, ...prev]);
       setLatestOrder(newOrder);
       setCart([]);
       setCurrentPage('order-success');
-      sendEmailNotification(newOrder);
+
+      setTimeout(() => alert(`📩 Email xác nhận đã gửi đến: ${customerInfo.email}`), 1500);
     } catch (err) {
       console.error('Không thể tạo đơn hàng:', err);
       alert('Không thể đặt hàng. Vui lòng kiểm tra kết nối và thử lại.');
@@ -278,8 +327,6 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col selection:bg-red-100 selection:text-[#ff5c62]">
-      {/* {showPopup && <WelcomePopup onClose={() => setShowPopup(false)} />} */}
-
       <Header
         onNavigate={handleNavigate}
         currentPage={currentPage}
@@ -312,7 +359,11 @@ const App: React.FC = () => {
         )}
         {currentPage === 'orders' && (
           <Orders
-            orders={orders.filter(o => o.userId === currentUser?.id || o.userId === 'guest')}
+            orders={
+              currentUser?.role === 'admin'
+                ? orders
+                : orders.filter(o => o.userId === currentUser?.id || o.userId === 'guest')
+            }
             onViewDetail={handleViewOrderDetail}
           />
         )}

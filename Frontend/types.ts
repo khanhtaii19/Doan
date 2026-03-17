@@ -1,4 +1,3 @@
-
 export type UserRole = 'admin' | 'user';
 export type MemberLevel = 'Silver' | 'Gold' | 'Diamond';
 
@@ -29,17 +28,22 @@ export interface Product {
   details: string;
   price: number;
   salePrice?: number;
-  costPrice?: number; // Giá vốn nhập vào
+  costPrice?: number;
   image: string;
   promotionText?: string;
   stock?: number;
-  totalSold?: number; // Số lượng đã bán
+  totalSold?: number;
 }
 
 export interface CartItem {
   product: Product;
   quantity: number;
 }
+
+// ─── Status đồng bộ với backend enum ─────────────────────────────────────────
+// Luồng: pending → processing → shipped → delivered
+// Có thể huỷ bất kỳ lúc nào: cancelled
+export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
 
 export interface Order {
   id: string;
@@ -56,7 +60,7 @@ export interface Order {
     addressDetail: string;
   };
   paymentMethod: 'cod' | 'transfer' | 'momo' | 'zalopay';
-  status: 'pending' | 'processing' | 'shipped' | 'completed';
+  status: OrderStatus;
   createdAt: string;
 }
 

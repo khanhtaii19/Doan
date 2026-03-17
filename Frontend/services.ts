@@ -101,7 +101,8 @@ export const api = {
       : `${API_BASE}/orders`;
     const res = await fetch(url, { headers: authHeaders() });
     const data = await handleResponse(res);
-    return data.data.map((o: any) => ({ ...o, id: o._id || o.id }));
+    // Trả về raw data để App.tsx dùng mapDbOrderToFrontend
+    return data.data;
   },
 
   createOrder: async (order: any) => {
@@ -111,7 +112,8 @@ export const api = {
       body: JSON.stringify(order)
     });
     const data = await handleResponse(res);
-    return { ...data.data, id: data.data._id || data.data.id };
+    // Trả về raw data từ DB (có _id, createdAt, customerInfo đầy đủ)
+    return data.data;
   },
 
   updateOrderStatus: async (orderId: string, status: string) => {
