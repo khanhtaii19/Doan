@@ -107,8 +107,8 @@ const BlogPost: React.FC<BlogPostProps> = ({ posts }) => {
       {/* Mini Footer */}
       <div className="max-w-2xl mx-auto px-4 pt-24 text-center">
         <div className="flex items-center justify-center gap-1 mb-4">
-          <span className="text-2xl font-extrabold text-slate-800">ShopWeb</span>
-          <span className="text-2xl font-extrabold text-[#ff5c62]">Store</span>
+          <span className="text-2xl font-extrabold text-slate-800">Nghien</span>
+          <span className="text-2xl font-extrabold text-[#ff5c62]">Food</span>
         </div>
         <p className="text-slate-400 text-sm mb-8">Cung cấp giải pháp ăn uống lành mạnh và tiện lợi cho cuộc sống hiện đại của bạn.</p>
         <div className="flex justify-center gap-6 text-slate-400 mb-12">

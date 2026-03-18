@@ -18,7 +18,7 @@ const OrderSuccess: React.FC<OrderSuccessProps> = ({ order, onGoHome, onGoOrders
         </div>
         <h1 className="text-4xl font-black text-slate-900 mb-4">Đặt hàng thành công!</h1>
         <p className="text-slate-500 text-lg mb-10 leading-relaxed">
-          Cảm ơn bạn đã tin tưởng ShopWebStore. <br /> Mã đơn hàng của bạn là <span className="text-slate-900 font-bold">#{order.id.slice(-8).toUpperCase()}</span>
+          Cảm ơn bạn đã tin tưởng NghienFood. <br /> Mã đơn hàng của bạn là <span className="text-slate-900 font-bold">#{order.id.slice(-8).toUpperCase()}</span>
         </p>
 
         <div className="bg-slate-50 rounded-[2.5rem] p-10 mb-10 border border-slate-100 text-left">

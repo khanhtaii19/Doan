@@ -8,8 +8,8 @@ const Footer: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
         <div>
           <div className="flex items-center gap-1 mb-6">
-            <span className="text-2xl font-extrabold">ShopWeb</span>
-            <span className="text-2xl font-extrabold text-[#ff5c62]">Store</span>
+            <span className="text-2xl font-extrabold">Nghien</span>
+            <span className="text-2xl font-extrabold text-[#ff5c62]">Food</span>
           </div>
           <p className="text-slate-400 leading-relaxed mb-6">
             Chuyên cung cấp các dịch vụ ẩm thực chất lượng cao, mang đến những bữa ăn ngon miệng và an toàn cho gia đình bạn.
@@ -64,7 +64,7 @@ const Footer: React.FC = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 pt-10 border-t border-slate-800 text-center text-slate-500 text-sm">
-        © 2024 ShopWebStore. All rights reserved. Designed with ❤️
+        © 2026 NghienFood. All rights reserved
       </div>
     </footer>
   );
