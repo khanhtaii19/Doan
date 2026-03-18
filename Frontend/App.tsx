@@ -25,10 +25,7 @@ const mapPaymentMethod = (method: string): 'credit_card' | 'cash' | 'bank_transf
   return 'cash';
 };
 
-// ─── Chuyển order từ DB sang Order type frontend ─────────────────────────────
-// Nhận thêm products[] để fallback tên/ảnh cho order cũ chưa lưu productName
 const mapDbOrderToFrontend = (dbOrder: any, products: Product[] = []): Order => {
-  // 1. customerInfo: lấy trực tiếp hoặc parse từ notes (order cũ)
   let customerInfo = dbOrder.customerInfo;
   if (!customerInfo || !customerInfo.name) {
     try {
@@ -39,7 +36,6 @@ const mapDbOrderToFrontend = (dbOrder: any, products: Product[] = []): Order => 
     }
   }
 
-  // 2. paymentMethod: lấy originalPaymentMethod hoặc map ngược từ backend enum
   let paymentMethod: Order['paymentMethod'] = 'cod';
   if (dbOrder.originalPaymentMethod) {
     paymentMethod = dbOrder.originalPaymentMethod as Order['paymentMethod'];
@@ -50,8 +46,6 @@ const mapDbOrderToFrontend = (dbOrder: any, products: Product[] = []): Order => 
     else if (pm === 'credit_card') paymentMethod = 'momo';
   }
 
-  // 3. items: dùng productName/productImage từ DB nếu có
-  //    fallback tìm trong products state (cho order cũ)
   const items: CartItem[] = (dbOrder.items || []).map((item: any) => {
     const matched = products.find(p => p.id === item.productId);
     return {
@@ -106,6 +100,8 @@ const App: React.FC = () => {
   const [latestOrder, setLatestOrder] = useState<Order | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  // null = hiển thị danh sách blog, có giá trị = hiển thị chi tiết bài đó
+  const [selectedBlogPost, setSelectedBlogPost] = useState<BlogPostType | null>(null);
 
   const [settings, setSettings] = useState<AppSettings>({
     product: { unit: 'Phần', allowComments: true },
@@ -154,12 +150,11 @@ const App: React.FC = () => {
     loadData();
   }, []);
 
-  // ─── Load orders (dùng lại được) ─────────────────────────
+  // ─── Load orders ─────────────────────────────────────────
   const loadOrders = async (user: User | null, productList: Product[] = products) => {
     if (!user) { setOrders([]); return; }
     try {
       const data: any[] = await api.getOrders();
-      // Truyền productList vào để fallback tên/ảnh cho order cũ
       const mapped = data.map(o => mapDbOrderToFrontend(o, productList));
       const filtered = user.role === 'admin'
         ? mapped
@@ -172,7 +167,6 @@ const App: React.FC = () => {
 
   useEffect(() => { loadOrders(currentUser); }, [currentUser]);
 
-  // Reload khi vào trang orders hoặc admin
   useEffect(() => {
     if ((currentPage === 'orders' || currentPage === 'admin') && currentUser) {
       loadOrders(currentUser);
@@ -181,17 +175,30 @@ const App: React.FC = () => {
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [currentPage, selectedProduct, selectedOrder]);
+  }, [currentPage, selectedProduct, selectedOrder, selectedBlogPost]);
 
   // ─── Handlers ────────────────────────────────────────────
+
+  // Navbar "Blog" → reset về danh sách (selectedBlogPost = null)
   const handleNavigate = (page: Page) => {
     if (page === 'admin' && currentUser?.role !== 'admin') {
       alert('Bạn không có quyền truy cập!');
       return;
     }
+    // Khi click "Blog" trên navbar → luôn về danh sách
+    if (page === 'blog') {
+      setSelectedBlogPost(null);
+    }
     setCurrentPage(page);
     if (page !== 'product-detail') setSelectedProduct(null);
     if (page !== 'order-detail') setSelectedOrder(null);
+  };
+
+  // Click một bài blog cụ thể (từ trang chủ hoặc từ danh sách blog)
+  const handleSelectBlogPost = (post: BlogPostType | null) => {
+    setSelectedBlogPost(post);
+    setCurrentPage('blog');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleLogin = (user: User, token: string) => {
@@ -258,8 +265,8 @@ const App: React.FC = () => {
       userId: currentUser?.id || 'guest',
       items: cart.map(item => ({
         productId: item.product.id,
-        productName: item.product.name,       // ← lưu vào DB
-        productImage: item.product.image,     // ← lưu vào DB
+        productName: item.product.name,
+        productImage: item.product.image,
         quantity: item.quantity,
         price: item.product.salePrice || item.product.price
       })),
@@ -289,7 +296,6 @@ const App: React.FC = () => {
     try {
       const savedOrder = await api.createOrder(orderPayload);
 
-      // Tạo order hiển thị ngay (dùng cart hiện tại vì đã có đủ thông tin)
       const newOrder: Order = {
         id: savedOrder._id || savedOrder.id,
         userId: currentUser?.id || 'guest',
@@ -301,7 +307,6 @@ const App: React.FC = () => {
         createdAt: savedOrder.createdAt || new Date().toISOString()
       };
 
-      // Cập nhật stock local
       setProducts(prev => prev.map(p => {
         const ci = cart.find(i => i.product.id === p.id);
         if (!ci) return p;
@@ -347,9 +352,21 @@ const App: React.FC = () => {
 
       <main className="flex-grow bg-white">
         {currentPage === 'home' && (
-          <Home onNavigateBlog={() => handleNavigate('blog')} blogPosts={blogPosts} products={products} />
+          <Home
+            onNavigateBlog={() => handleNavigate('blog')}
+            onNavigateShop={() => handleNavigate('shop')}
+            onNavigateBlogPost={handleSelectBlogPost}
+            blogPosts={blogPosts}
+            products={products}
+          />
         )}
-        {currentPage === 'blog' && <BlogPost posts={blogPosts} />}
+        {currentPage === 'blog' && (
+          <BlogPost
+            posts={blogPosts}
+            selectedPost={selectedBlogPost}
+            onSelectPost={handleSelectBlogPost}
+          />
+        )}
         {currentPage === 'shop' && (
           <Shop
             products={products}

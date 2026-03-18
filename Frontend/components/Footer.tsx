@@ -30,7 +30,7 @@ const Footer: React.FC = () => {
         <div>
           <h4 className="text-lg font-bold mb-6">Liên kết nhanh</h4>
           <ul className="space-y-4 text-slate-400">
-            <li><a href="#" className="hover:text-white transition-colors">Trang chủ</a></li>
+            <li><a href="/Home" className="hover:text-white transition-colors">Trang chủ</a></li>
             <li><a href="#" className="hover:text-white transition-colors">Thực đơn</a></li>
             <li><a href="#" className="hover:text-white transition-colors">Khuyến mãi</a></li>
             <li><a href="#" className="hover:text-white transition-colors">Tuyển dụng</a></li>

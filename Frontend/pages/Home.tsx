@@ -1,15 +1,16 @@
-
 import React from 'react';
 import { Play, Star, ChevronRight, ShoppingBag } from 'lucide-react';
 import { BlogPost, Product } from '../types';
 
 interface HomeProps {
   onNavigateBlog: () => void;
+  onNavigateShop: () => void;
+  onNavigateBlogPost: (post: BlogPost) => void;
   blogPosts: BlogPost[];
   products: Product[];
 }
 
-const Home: React.FC<HomeProps> = ({ onNavigateBlog, blogPosts, products }) => {
+const Home: React.FC<HomeProps> = ({ onNavigateBlog, onNavigateShop, onNavigateBlogPost, blogPosts, products }) => {
   return (
     <div className="pt-20">
       {/* Hero Section */}
@@ -25,7 +26,10 @@ const Home: React.FC<HomeProps> = ({ onNavigateBlog, blogPosts, products }) => {
             Trải nghiệm ẩm thực tuyệt vời được chế biến từ những nguyên liệu tươi ngon nhất, mang đến sự ấm áp cho mọi bữa ăn gia đình.
           </p>
           <div className="flex flex-wrap items-center gap-6">
-            <button className="bg-[#ff5c62] text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-[#ee4b51] transition-all shadow-xl shadow-red-200">
+            <button
+              onClick={onNavigateShop}
+              className="bg-[#ff5c62] text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-[#ee4b51] transition-all shadow-xl shadow-red-200"
+            >
               Xem Thực Đơn
             </button>
             <button className="flex items-center gap-3 font-bold text-slate-700 hover:text-[#ff5c62] transition-colors group">
@@ -38,7 +42,6 @@ const Home: React.FC<HomeProps> = ({ onNavigateBlog, blogPosts, products }) => {
         </div>
 
         <div className="order-1 lg:order-2 relative">
-          {/* Rounded frame image */}
           <div className="relative w-full aspect-square max-w-[500px] mx-auto">
              <div className="absolute inset-0 bg-[#f8f9fa] rounded-[4rem] rotate-3"></div>
              <div className="absolute inset-0 overflow-hidden rounded-[4rem] border-8 border-white shadow-2xl">
@@ -49,7 +52,6 @@ const Home: React.FC<HomeProps> = ({ onNavigateBlog, blogPosts, products }) => {
                />
              </div>
              
-             {/* Floating Badges */}
              <div className="absolute -top-6 -left-6 bg-white p-4 rounded-2xl shadow-xl flex items-center gap-3">
                <div className="text-right">
                  <div className="flex items-center gap-1 font-bold text-lg">5.0 <Star size={16} className="fill-yellow-400 text-yellow-400" /></div>
@@ -119,7 +121,7 @@ const Home: React.FC<HomeProps> = ({ onNavigateBlog, blogPosts, products }) => {
             <div 
                 key={post.id} 
                 className="group cursor-pointer"
-                onClick={onNavigateBlog}
+                onClick={() => onNavigateBlogPost(post)}
             >
               <div className="aspect-[4/3] rounded-3xl overflow-hidden mb-6">
                 <img src={post.image} alt={post.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
