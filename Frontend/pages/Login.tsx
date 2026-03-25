@@ -53,8 +53,8 @@ const Login: React.FC<LoginProps> = ({ onLogin, onBack }) => {
 
           <div className="relative z-10">
             <div className="flex items-center gap-1 mb-12">
-              <span className="text-2xl font-extrabold">ShopWeb</span>
-              <span className="text-2xl font-extrabold text-[#ff5c62]">Store</span>
+              <span className="text-2xl font-extrabold">Nghien</span>
+              <span className="text-2xl font-extrabold text-[#ff5c62]">Food</span>
             </div>
 
             <h1 className="text-4xl lg:text-5xl font-extrabold leading-tight mb-6">

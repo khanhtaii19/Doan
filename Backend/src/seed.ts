@@ -74,6 +74,16 @@ const seedDatabase = async () => {
         name: 'Tráng Miệng',
         description: 'Kết thúc ngọt ngào với các loại bánh và kem đặc sắc.',
         image: 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?q=80&w=1944&auto=format&fit=crop'
+      },
+      {
+        name: 'Đồ Uống',
+        description: 'Từ cà phê truyền thống đến các loại nước ép tươi mát và trà trái cây.',
+        image: 'https://images.unsplash.com/photo-1544145945-f904253d0c7b?q=80&w=1974&auto=format&fit=crop'
+      },
+      {
+        name: 'Combo Đặc Biệt',
+        description: 'Tiết kiệm hơn với các gói combo được thiết kế hoàn hảo cho nhóm hoặc cá nhân.',
+        image: 'https://images.unsplash.com/photo-1600271886332-699bb2798bda?q=80&w=1974&auto=format&fit=crop'
       }
     ]);
     console.log(`✅ Seeded ${categories.length} categories`);
@@ -470,6 +480,65 @@ const seedDatabase = async () => {
         stock: 40,
         totalSold: 98,
         image: 'https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?q=80&w=1968&auto=format&fit=crop'
+  },
+  {
+    categoryId: categories[3]._id.toString(),
+    name: 'Trà Đào Cam Sả',
+    description: 'Vị trà thanh mát, hương cam sả nồng nàn và những miếng đào giòn ngọt.',
+    details: 'Sử dụng trà đen thượng hạng và trái cây tươi trong ngày.',
+    price: 55000,
+    costPrice: 20000,
+    stock: 100,
+    totalSold: 450,
+    image: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?q=80&w=1964&auto=format&fit=crop'
+  },
+  {
+    categoryId: categories[3]._id.toString(),
+    name: 'Cà Phê Muối',
+    description: 'Sự kết hợp độc đáo giữa vị đắng của cà phê và lớp kem muối béo mặn.',
+    details: 'Cà phê phin truyền thống kết hợp công thức kem muối đặc biệt.',
+    price: 45000,
+    costPrice: 15000,
+    stock: 80,
+    totalSold: 320,
+    image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?q=80&w=1974&auto=format&fit=crop'
+  },
+  {
+    categoryId: categories[3]._id.toString(),
+    name: 'Nước Ép Cam Tươi',
+    description: 'Nước ép cam nguyên chất giàu vitamin C, không thêm đường.',
+    details: 'Cam sành mọng nước, vắt tươi khi khách đặt.',
+    price: 50000,
+    costPrice: 25000,
+    stock: 60,
+    totalSold: 180,
+    image: 'https://images.unsplash.com/photo-1613478223719-2ab802602423?q=80&w=1974&auto=format&fit=crop'
+  },
+  {
+    categoryId: categories[4]._id.toString(),
+    name: 'Combo Gia Đình Hạnh Phúc',
+    description: '1 Pizza Hải Sản, 1 Mì Ý Carbonara, 1 Salad Caesar và 4 ly Trà Đào.',
+    details: 'Phù hợp cho nhóm 4-5 người. Tiết kiệm 20% so với gọi lẻ.',
+    price: 550000,
+    salePrice: 440000,
+    costPrice: 280000,
+    stock: 20,
+    totalSold: 55,
+    image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=2070&auto=format&fit=crop',
+    promotionText: 'Tặng kèm 1 phần khoai tây chiên'
+  },
+  {
+    categoryId: categories[4]._id.toString(),
+    name: 'Combo Hẹn Hò Lãng Mạn',
+    description: '2 Steak Thăn Nội, 1 Tiramisu và 2 ly Vang Đỏ.',
+    details: 'Không gian lãng mạn cho cặp đôi. Bao gồm trang trí bàn tiệc nhẹ.',
+    price: 950000,
+    salePrice: 790000,
+    costPrice: 500000,
+    stock: 10,
+    totalSold: 24,
+    image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=2080&auto=format&fit=crop',
+    promotionText: 'Miễn phí trang trí nến và hoa'
   }
     ]);
     console.log(`✅ Seeded ${products.length} products`);
