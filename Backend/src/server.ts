@@ -13,9 +13,10 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const normalizeOrigin = (value: string) => value.trim().replace(/\/+$/, '');
 const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000')
   .split(',')
-  .map((origin) => origin.trim())
+  .map(normalizeOrigin)
   .filter(Boolean);
 
 // Middleware
@@ -25,7 +26,9 @@ app.use(cors({
   origin: (origin, callback) => {
     // Allow server-to-server calls and tools like curl/Postman (no Origin header).
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
+    const normalizedRequestOrigin = normalizeOrigin(origin);
+    if (allowedOrigins.includes(normalizedRequestOrigin)) return callback(null, true);
+    console.warn(`CORS blocked for origin: ${origin}. Allowed: ${allowedOrigins.join(', ')}`);
     return callback(new Error(`CORS blocked for origin: ${origin}`));
   },
   credentials: true
