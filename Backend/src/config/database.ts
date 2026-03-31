@@ -2,7 +2,8 @@ import mongoose from 'mongoose';
 
 const connectDB = async () => {
   try {
-    const mongoUri = process.env.MONGODB_URI || 'mongodb+srv://phamkhanhtaii_db_user:1234567890a@cluster0.ahzvi1w.mongodb.net/?appName=Cluster0';
+    const mongoUri = process.env.MONGODB_URI as string;
+    if (!mongoUri) throw new Error('MONGODB_URI is required');
     await mongoose.connect(mongoUri);
     console.log('✅ MongoDB connected successfully');
   } catch (error) {
