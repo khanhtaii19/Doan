@@ -13,7 +13,7 @@ import Orders from './pages/Orders';
 import OrderDetailView from './pages/OrderDetailView';
 import CartDrawer from './components/CartDrawer';
 import CRM from './pages/CRM';
-import { Product, Category, Coupon, User, CartItem, Order, AppSettings, BlogPost as BlogPostType } from './types';
+import { Product, Category, Coupon, User, CartItem, Order, AppSettings, BlogPost as BlogPostType, ProductSize } from './types';
 import { api } from './services';
 
 type Page = 'home' | 'blog' | 'shop' | 'product-detail' | 'admin' | 'crm' | 'login' | 'checkout' | 'order-success' | 'orders' | 'order-detail';
@@ -24,6 +24,15 @@ const mapPaymentMethod = (method: string): 'credit_card' | 'cash' | 'bank_transf
   if (method === 'momo' || method === 'zalopay') return 'credit_card';
   return 'cash';
 };
+
+const getSizePrice = (product: Product, size: ProductSize): number => {
+  if (product.sizePrices) {
+    return size === 'large' ? product.sizePrices.large : product.sizePrices.medium;
+  }
+  return product.salePrice || product.price;
+};
+
+const getCartItemKey = (productId: string, size: ProductSize): string => `${productId}-${size}`;
 
 const mapDbOrderToFrontend = (dbOrder: any, products: Product[] = []): Order => {
   let customerInfo = dbOrder.customerInfo;
@@ -48,20 +57,25 @@ const mapDbOrderToFrontend = (dbOrder: any, products: Product[] = []): Order => 
 
   const items: CartItem[] = (dbOrder.items || []).map((item: any) => {
     const matched = products.find(p => p.id === item.productId);
+    const size: ProductSize = item.size === 'large' ? 'large' : 'medium';
+    const unitPrice = Number(item.price || 0);
     return {
       product: {
         id: item.productId,
         name: item.productName || matched?.name || `Sản phẩm #${String(item.productId).slice(-4)}`,
-        price: item.price,
-        salePrice: item.price,
+        price: unitPrice,
+        salePrice: unitPrice,
         image: item.productImage || matched?.image || '',
         categoryId: matched?.categoryId || '',
         description: matched?.description || '',
         details: matched?.details || '',
         stock: matched?.stock,
         totalSold: matched?.totalSold,
+        sizePrices: matched?.sizePrices
       },
-      quantity: item.quantity
+      quantity: item.quantity,
+      size,
+      unitPrice
     };
   });
 
@@ -214,26 +228,40 @@ const App: React.FC = () => {
     setCurrentPage('home');
   };
 
-  const handleAddToCart = (product: Product, quantity: number = 1) => {
+  const handleAddToCart = (
+    product: Product,
+    quantity: number = 1,
+    size: ProductSize = 'medium',
+    unitPrice?: number
+  ) => {
     const stock = product.stock ?? 0;
     if (stock <= 0) { alert('Rất tiếc, món này đã hết.'); return; }
+    const finalUnitPrice = unitPrice ?? getSizePrice(product, size);
     setCart(prev => {
-      const existing = prev.find(item => item.product.id === product.id);
+      const existing = prev.find(item => item.product.id === product.id && item.size === size);
       const currentInCart = existing ? existing.quantity : 0;
       const totalNew = currentInCart + quantity;
       if (totalNew > stock) {
         alert(`Chỉ còn ${stock} phần. Bạn đã có ${currentInCart} trong giỏ.`);
         return prev;
       }
-      if (existing) return prev.map(i => i.product.id === product.id ? { ...i, quantity: totalNew } : i);
-      return [...prev, { product, quantity }];
+      if (existing) {
+        return prev.map(i => {
+          if (i.product.id === product.id && i.size === size) {
+            return { ...i, quantity: totalNew, unitPrice: finalUnitPrice };
+          }
+          return i;
+        });
+      }
+      return [...prev, { product, quantity, size, unitPrice: finalUnitPrice }];
     });
     setIsCartOpen(true);
   };
 
-  const handleUpdateCartQuantity = (productId: string, delta: number) => {
+  const handleUpdateCartQuantity = (cartItemKey: string, delta: number) => {
     setCart(prev => prev.map(item => {
-      if (item.product.id !== productId) return item;
+      const key = getCartItemKey(item.product.id, item.size);
+      if (key !== cartItemKey) return item;
       const stock = item.product.stock ?? 0;
       const newQty = Math.max(1, item.quantity + delta);
       if (delta > 0 && newQty > stock) { alert(`Chỉ còn ${stock} phần.`); return item; }
@@ -241,8 +269,8 @@ const App: React.FC = () => {
     }));
   };
 
-  const handleRemoveFromCart = (productId: string) => {
-    setCart(prev => prev.filter(item => item.product.id !== productId));
+  const handleRemoveFromCart = (cartItemKey: string) => {
+    setCart(prev => prev.filter(item => getCartItemKey(item.product.id, item.size) !== cartItemKey));
   };
 
   const handleUpdateOrderStatus = async (orderId: string, status: Order['status']) => {
@@ -257,7 +285,7 @@ const App: React.FC = () => {
 
   const handleCompleteOrder = async (customerInfo: any, paymentMethod: any) => {
     const subtotal = cart.reduce(
-      (sum, item) => sum + (item.product.salePrice || item.product.price) * item.quantity, 0
+      (sum, item) => sum + item.unitPrice * item.quantity, 0
     );
     const totalAmount = subtotal + 30000;
 
@@ -267,8 +295,9 @@ const App: React.FC = () => {
         productId: item.product.id,
         productName: item.product.name,
         productImage: item.product.image,
+        size: item.size,
         quantity: item.quantity,
-        price: item.product.salePrice || item.product.price
+        price: item.unitPrice
       })),
       totalAmount,
       finalAmount: totalAmount,

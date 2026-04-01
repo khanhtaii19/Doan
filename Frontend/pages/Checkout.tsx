@@ -6,8 +6,8 @@ interface CheckoutProps {
   items: CartItem[];
   user: UserType | null;
   onBack: () => void;
-  onUpdateQuantity: (productId: string, delta: number) => void;
-  onRemoveItem: (productId: string) => void;
+  onUpdateQuantity: (cartItemKey: string, delta: number) => void;
+  onRemoveItem: (cartItemKey: string) => void;
   onComplete: (customerInfo: any, paymentMethod: any) => void;
 }
 
@@ -96,7 +96,7 @@ const Checkout: React.FC<CheckoutProps> = ({
   };
 
   const subtotal = items.reduce(
-    (sum, item) => sum + (item.product.salePrice || item.product.price) * item.quantity, 0
+    (sum, item) => sum + item.unitPrice * item.quantity, 0
   );
   const shipping = items.length > 0 ? 30000 : 0;
   const total    = subtotal + shipping;
@@ -185,26 +185,30 @@ const Checkout: React.FC<CheckoutProps> = ({
                 ) : items.map((item) => {
                   const stock = item.product.stock || 0;
                   const isMax = item.quantity >= stock;
+                  const cartItemKey = `${item.product.id}-${item.size}`;
                   return (
-                    <div key={item.product.id} className="flex items-center gap-6 p-4 rounded-3xl border border-slate-50 bg-slate-50/50 hover:border-red-50 transition-all">
+                    <div key={cartItemKey} className="flex items-center gap-6 p-4 rounded-3xl border border-slate-50 bg-slate-50/50 hover:border-red-50 transition-all">
                       <div className="w-20 h-20 rounded-2xl overflow-hidden shadow-sm border border-white">
                         <img src={item.product.image} className="w-full h-full object-cover" alt="" />
                       </div>
                       <div className="flex-grow">
                         <h4 className="font-bold text-slate-900 mb-1 line-clamp-1">{item.product.name}</h4>
                         <div className="flex items-center justify-between">
-                          <div className="text-[#ff5c62] font-black text-sm">{(item.product.salePrice || item.product.price).toLocaleString()}đ</div>
+                          <div className="text-[#ff5c62] font-black text-sm">{item.unitPrice.toLocaleString()}đ</div>
+                          <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">
+                            Size {item.size === 'large' ? 'Lớn' : 'Vừa'}
+                          </div>
                           <div className="flex items-center gap-2">
                             <div className="flex items-center bg-white rounded-xl p-1 shadow-sm border border-slate-100">
-                              <button onClick={() => onUpdateQuantity(item.product.id, -1)} disabled={item.quantity <= 1} className="w-8 h-8 flex items-center justify-center rounded-lg transition-all disabled:text-slate-200 text-slate-500 hover:bg-slate-100">
+                              <button onClick={() => onUpdateQuantity(cartItemKey, -1)} disabled={item.quantity <= 1} className="w-8 h-8 flex items-center justify-center rounded-lg transition-all disabled:text-slate-200 text-slate-500 hover:bg-slate-100">
                                 <Minus size={14} />
                               </button>
                               <span className="w-10 text-center font-black text-slate-900 text-sm">{item.quantity}</span>
-                              <button onClick={() => onUpdateQuantity(item.product.id, 1)} disabled={isMax} className="w-8 h-8 flex items-center justify-center rounded-lg transition-all disabled:text-slate-200 text-[#ff5c62] hover:bg-red-50">
+                              <button onClick={() => onUpdateQuantity(cartItemKey, 1)} disabled={isMax} className="w-8 h-8 flex items-center justify-center rounded-lg transition-all disabled:text-slate-200 text-[#ff5c62] hover:bg-red-50">
                                 <Plus size={14} />
                               </button>
                             </div>
-                            <button onClick={() => onRemoveItem(item.product.id)} className="w-10 h-10 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
+                            <button onClick={() => onRemoveItem(cartItemKey)} className="w-10 h-10 flex items-center justify-center text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all">
                               <Trash2 size={18} />
                             </button>
                           </div>
@@ -347,9 +351,11 @@ const Checkout: React.FC<CheckoutProps> = ({
               </h3>
               <div className="space-y-4 mb-8 max-h-[300px] overflow-y-auto pr-2">
                 {items.map(item => (
-                  <div key={item.product.id} className="flex justify-between text-sm">
-                    <span className="text-slate-400 font-medium line-clamp-1 flex-grow pr-4">x{item.quantity} {item.product.name}</span>
-                    <span className="font-bold whitespace-nowrap">{((item.product.salePrice || item.product.price) * item.quantity).toLocaleString()}đ</span>
+                  <div key={`${item.product.id}-${item.size}`} className="flex justify-between text-sm">
+                    <span className="text-slate-400 font-medium line-clamp-1 flex-grow pr-4">
+                      x{item.quantity} {item.product.name} ({item.size === 'large' ? 'Lớn' : 'Vừa'})
+                    </span>
+                    <span className="font-bold whitespace-nowrap">{(item.unitPrice * item.quantity).toLocaleString()}đ</span>
                   </div>
                 ))}
               </div>

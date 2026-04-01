@@ -33,9 +33,11 @@ const OrderSuccess: React.FC<OrderSuccessProps> = ({ order, onGoHome, onGoOrders
            
            <div className="space-y-4 mb-8 border-b border-slate-200 pb-8">
               {order.items.map(item => (
-                <div key={item.product.id} className="flex justify-between text-sm">
-                  <span className="text-slate-500 font-medium">{item.quantity}x {item.product.name}</span>
-                  <span className="font-bold">{(item.product.salePrice || item.product.price).toLocaleString()}đ</span>
+                <div key={`${item.product.id}-${item.size}`} className="flex justify-between text-sm">
+                  <span className="text-slate-500 font-medium">
+                    {item.quantity}x {item.product.name} ({item.size === 'large' ? 'Lớn' : 'Vừa'})
+                  </span>
+                  <span className="font-bold">{(item.unitPrice * item.quantity).toLocaleString()}đ</span>
                 </div>
               ))}
            </div>

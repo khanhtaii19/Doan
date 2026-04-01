@@ -11,6 +11,7 @@ interface ShopProps {
 
 const Shop: React.FC<ShopProps> = ({ products, categories, onViewDetail }) => {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const getDisplayPrice = (product: Product) => (product.sizePrices ? product.sizePrices.medium : (product.salePrice || product.price));
 
   const filteredProducts = selectedCategoryId
     ? products.filter(p => p.categoryId === selectedCategoryId)
@@ -136,7 +137,7 @@ const Shop: React.FC<ShopProps> = ({ products, categories, onViewDetail }) => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <span className="text-xl font-extrabold text-[#ff5c62]">
-                        {(p.salePrice || p.price).toLocaleString()}đ
+                        {getDisplayPrice(p).toLocaleString()}đ
                       </span>
                       {p.salePrice && (
                         <span className="text-sm text-slate-300 line-through decoration-slate-300">

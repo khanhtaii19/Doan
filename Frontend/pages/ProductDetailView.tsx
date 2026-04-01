@@ -1,17 +1,18 @@
 
 import React, { useState } from 'react';
 import { ChevronLeft, ShoppingCart, ShieldCheck, Truck, RefreshCw, Star, Plus, Minus, Ticket, AlertTriangle } from 'lucide-react';
-import { Product, Coupon } from '../types';
+import { Product, Coupon, ProductSize } from '../types';
 
 interface ProductDetailViewProps {
   product: Product;
   coupons: Coupon[];
   onBack: () => void;
-  onAddToCart: (product: Product, quantity: number) => void;
+  onAddToCart: (product: Product, quantity: number, size: ProductSize, unitPrice: number) => void;
 }
 
 const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product, coupons, onBack, onAddToCart }) => {
   const [quantity, setQuantity] = useState(1);
+  const [selectedSize, setSelectedSize] = useState<ProductSize>('medium');
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -19,7 +20,10 @@ const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product, coupons,
   const stock = product.stock ?? 0;
   const isOutOfStock = stock <= 0;
   
-  const finalPrice = product.salePrice || product.price;
+  const basePrice = product.salePrice || product.price;
+  const mediumPrice = product.sizePrices ? product.sizePrices.medium : basePrice;
+  const largePrice = product.sizePrices ? product.sizePrices.large : Math.round(basePrice * 1.25);
+  const finalPrice = selectedSize === 'large' ? largePrice : mediumPrice;
   const discountAmount = appliedCoupon ? (finalPrice * appliedCoupon.discountPercent / 100) : 0;
   const totalPrice = (finalPrice - discountAmount) * quantity;
 
@@ -60,7 +64,7 @@ const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product, coupons,
       alert(`Rất tiếc, hiện chỉ còn ${stock} phần.`);
       return;
     }
-    onAddToCart(product, quantity);
+    onAddToCart(product, quantity, selectedSize, finalPrice);
   };
 
   return (
@@ -109,6 +113,40 @@ const ProductDetailView: React.FC<ProductDetailViewProps> = ({ product, coupons,
             </div>
 
             <p className="text-slate-500 text-lg leading-relaxed mb-10">{product.description}</p>
+
+            {!isOutOfStock && (
+              <div className="mb-8">
+                <h4 className="text-sm font-bold text-slate-700 mb-3">Chọn size</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => setSelectedSize('medium')}
+                    className={`rounded-2xl border px-4 py-3 text-left transition-all ${
+                      selectedSize === 'medium'
+                        ? 'border-[#ff5c62] bg-red-50 text-[#ff5c62]'
+                        : 'border-slate-200 hover:border-slate-300 text-slate-600'
+                    }`}
+                  >
+                    <div className="text-xs font-black uppercase tracking-widest">Size vừa</div>
+                    <div className="font-bold text-base">
+                      {mediumPrice.toLocaleString()}đ
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => setSelectedSize('large')}
+                    className={`rounded-2xl border px-4 py-3 text-left transition-all ${
+                      selectedSize === 'large'
+                        ? 'border-[#ff5c62] bg-red-50 text-[#ff5c62]'
+                        : 'border-slate-200 hover:border-slate-300 text-slate-600'
+                    }`}
+                  >
+                    <div className="text-xs font-black uppercase tracking-widest">Size lớn</div>
+                    <div className="font-bold text-base">
+                      {largePrice.toLocaleString()}đ
+                    </div>
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Error Message for Stock */}
             {error && (

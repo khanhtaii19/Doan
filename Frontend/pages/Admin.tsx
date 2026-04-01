@@ -30,6 +30,10 @@ const Admin: React.FC<AdminProps> = ({ products, categories, coupons, settings, 
     description: '',
     details: '',
     price: 0,
+    sizePrices: {
+      medium: 0,
+      large: 0
+    },
     costPrice: 0,
     stock: 0,
     image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=2080&auto=format&fit=crop',
@@ -37,7 +41,13 @@ const Admin: React.FC<AdminProps> = ({ products, categories, coupons, settings, 
   });
 
   const handleEdit = (p: Product) => {
-    setFormData(p);
+    setFormData({
+      ...p,
+      sizePrices: p.sizePrices || {
+        medium: p.salePrice || p.price,
+        large: Math.round((p.salePrice || p.price) * 1.25)
+      }
+    });
     setEditingId(p.id);
     setIsEditing(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -50,6 +60,10 @@ const Admin: React.FC<AdminProps> = ({ products, categories, coupons, settings, 
       description: '',
       details: '',
       price: 0,
+      sizePrices: {
+        medium: 0,
+        large: 0
+      },
       costPrice: 0,
       stock: 0,
       image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=2080&auto=format&fit=crop',
@@ -61,15 +75,26 @@ const Admin: React.FC<AdminProps> = ({ products, categories, coupons, settings, 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.price || formData.price <= 0) {
+    const mediumPrice = formData.sizePrices?.medium || formData.price || 0;
+    const largePrice = formData.sizePrices?.large || 0;
+    if (!formData.name || mediumPrice <= 0 || largePrice <= 0) {
       alert('Vui lòng điền đầy đủ thông tin và giá món ăn hợp lệ');
       return;
     }
 
+    const payload = {
+      ...formData,
+      price: mediumPrice,
+      sizePrices: {
+        medium: mediumPrice,
+        large: largePrice
+      }
+    };
+
     if (editingId) {
-      onUpdateProduct({ ...formData, id: editingId } as Product);
+      onUpdateProduct({ ...payload, id: editingId } as Product);
     } else {
-      onAddProduct({ ...formData, id: `p-${Date.now()}`, totalSold: 0 } as Product);
+      onAddProduct({ ...payload, id: `p-${Date.now()}`, totalSold: 0 } as Product);
     }
     handleResetForm();
   };
@@ -77,6 +102,7 @@ const Admin: React.FC<AdminProps> = ({ products, categories, coupons, settings, 
   const filteredProducts = products.filter(p => 
     p.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  const getSellingPrice = (p: Product) => p.sizePrices?.medium || p.salePrice || p.price;
 
   // Dashboard Calculations
   const dashboardStats = useMemo(() => {
@@ -133,9 +159,9 @@ const Admin: React.FC<AdminProps> = ({ products, categories, coupons, settings, 
 
   // Financial Metrics
   const totalStockCostValue = products.reduce((sum, p) => sum + (p.costPrice || 0) * (p.stock || 0), 0);
-  const totalRevenuePotential = products.reduce((sum, p) => sum + (p.salePrice || p.price) * (p.stock || 0), 0);
+  const totalRevenuePotential = products.reduce((sum, p) => sum + getSellingPrice(p) * (p.stock || 0), 0);
   const totalRealizedProfit = products.reduce((sum, p) => {
-    const profitPerItem = (p.salePrice || p.price) - (p.costPrice || 0);
+    const profitPerItem = getSellingPrice(p) - (p.costPrice || 0);
     return sum + (profitPerItem * (p.totalSold || 0));
   }, 0);
 
@@ -372,7 +398,7 @@ const Admin: React.FC<AdminProps> = ({ products, categories, coupons, settings, 
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
                         <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Giá nhập (Vốn)</label>
                         <input 
@@ -388,9 +414,31 @@ const Admin: React.FC<AdminProps> = ({ products, categories, coupons, settings, 
                         <input 
                           type="number" 
                           required
-                          value={formData.price}
-                          onChange={(e) => setFormData({...formData, price: Number(e.target.value)})}
+                          value={formData.sizePrices?.medium || 0}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            sizePrices: {
+                              medium: Number(e.target.value),
+                              large: formData.sizePrices?.large || 0
+                            }
+                          })}
                           className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 focus:outline-none focus:border-[#ff5c62] font-black text-[#ff5c62] transition-all focus:bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Giá size lớn</label>
+                        <input
+                          type="number"
+                          required
+                          value={formData.sizePrices?.large || 0}
+                          onChange={(e) => setFormData({
+                            ...formData,
+                            sizePrices: {
+                              medium: formData.sizePrices?.medium || 0,
+                              large: Number(e.target.value)
+                            }
+                          })}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-3.5 focus:outline-none focus:border-[#ff5c62] font-black text-orange-500 transition-all focus:bg-white"
                         />
                       </div>
                     </div>
@@ -473,7 +521,7 @@ const Admin: React.FC<AdminProps> = ({ products, categories, coupons, settings, 
                             </thead>
                             <tbody className="divide-y divide-slate-100">
                                 {filteredProducts.map(p => {
-                                    const profitPerItem = (p.salePrice || p.price) - (p.costPrice || 0);
+                                    const profitPerItem = getSellingPrice(p) - (p.costPrice || 0);
                                     const isLowStock = (p.stock || 0) < 10;
                                     const isOutOfStock = (p.stock || 0) <= 0;
                                     
@@ -498,7 +546,12 @@ const Admin: React.FC<AdminProps> = ({ products, categories, coupons, settings, 
                                             <td className="px-8 py-6">
                                                 <div className="flex flex-col">
                                                     <span className="text-[10px] font-bold text-slate-400 line-through">{(p.costPrice || 0).toLocaleString()}đ</span>
-                                                    <span className="text-base font-black text-[#ff5c62]">{(p.salePrice || p.price).toLocaleString()}đ</span>
+                                                    <span className="text-base font-black text-[#ff5c62]">{getSellingPrice(p).toLocaleString()}đ</span>
+                                                    {p.sizePrices && (
+                                                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                                        Vừa: {p.sizePrices.medium.toLocaleString()}đ • Lớn: {p.sizePrices.large.toLocaleString()}đ
+                                                      </span>
+                                                    )}
                                                 </div>
                                             </td>
                                             <td className="px-8 py-6 text-center">

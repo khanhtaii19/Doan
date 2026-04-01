@@ -7,13 +7,13 @@ interface CartDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   items: CartItem[];
-  onUpdateQuantity: (productId: string, delta: number) => void;
-  onRemoveItem: (productId: string) => void;
+  onUpdateQuantity: (cartItemKey: string, delta: number) => void;
+  onRemoveItem: (cartItemKey: string) => void;
   onCheckout: () => void;
 }
 
 const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, items, onUpdateQuantity, onRemoveItem, onCheckout }) => {
-  const subtotal = items.reduce((sum, item) => sum + (item.product.salePrice || item.product.price) * item.quantity, 0);
+  const subtotal = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
 
   const handleIncrement = (item: CartItem) => {
     const stock = item.product.stock ?? 0;
@@ -21,7 +21,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, items, onUpdat
       alert(`Xin lỗi, chúng tôi chỉ có ${stock} phần món ${item.product.name} này thôi.`);
       return;
     }
-    onUpdateQuantity(item.product.id, 1);
+    onUpdateQuantity(`${item.product.id}-${item.size}`, 1);
   };
 
   if (!isOpen) return null;
@@ -54,23 +54,26 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, items, onUpdat
               </div>
             ) : (
               items.map((item) => (
-                <div key={item.product.id} className="flex gap-4">
+                <div key={`${item.product.id}-${item.size}`} className="flex gap-4">
                   <div className="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0 border border-gray-100">
                     <img src={item.product.image} className="w-full h-full object-cover" alt="" />
                   </div>
                   <div className="flex-grow">
                     <div className="flex justify-between mb-1">
                       <h3 className="font-bold text-slate-900 line-clamp-1">{item.product.name}</h3>
-                      <button onClick={() => onRemoveItem(item.product.id)} className="text-slate-300 hover:text-red-500">
+                      <button onClick={() => onRemoveItem(`${item.product.id}-${item.size}`)} className="text-slate-300 hover:text-red-500">
                         <Trash2 size={16} />
                       </button>
                     </div>
                     <p className="text-[#ff5c62] font-bold text-sm mb-3">
-                      {(item.product.salePrice || item.product.price).toLocaleString()}đ
+                      {item.unitPrice.toLocaleString()}đ
                     </p>
+                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
+                      Size {item.size === 'large' ? 'Lớn' : 'Vừa'}
+                    </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center bg-slate-50 rounded-lg p-1">
-                        <button onClick={() => onUpdateQuantity(item.product.id, -1)} className="w-6 h-6 flex items-center justify-center text-slate-500 hover:bg-white rounded transition-colors">
+                        <button onClick={() => onUpdateQuantity(`${item.product.id}-${item.size}`, -1)} className="w-6 h-6 flex items-center justify-center text-slate-500 hover:bg-white rounded transition-colors">
                           <Minus size={14} />
                         </button>
                         <span className="w-8 text-center text-xs font-bold">{item.quantity}</span>
@@ -82,7 +85,7 @@ const CartDrawer: React.FC<CartDrawerProps> = ({ isOpen, onClose, items, onUpdat
                         </button>
                       </div>
                       <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                        Tổng: {((item.product.salePrice || item.product.price) * item.quantity).toLocaleString()}đ
+                        Tổng: {(item.unitPrice * item.quantity).toLocaleString()}đ
                       </span>
                     </div>
                     {item.quantity >= (item.product.stock ?? 0) && (

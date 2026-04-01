@@ -71,7 +71,7 @@ const OrderDetailView: React.FC<OrderDetailViewProps> = ({ order, onBack, onUpda
   };
 
   const subtotal = order.items.reduce(
-    (sum, item) => sum + (item.product.salePrice || item.product.price) * item.quantity, 0
+    (sum, item) => sum + item.unitPrice * item.quantity, 0
   );
 
   const statusInfo = STATUS_CONFIG[order.status] ?? STATUS_CONFIG['pending'];
@@ -189,14 +189,15 @@ const OrderDetailView: React.FC<OrderDetailViewProps> = ({ order, onBack, onUpda
                           )}
                         </div>
                         <div className="text-right">
-                          <div className="font-black text-slate-900">{(item.product.salePrice || item.product.price).toLocaleString()}đ</div>
+                          <div className="font-black text-slate-900">{item.unitPrice.toLocaleString()}đ</div>
+                          <div className="text-[10px] font-black text-slate-400 uppercase">Size {item.size === 'large' ? 'Lớn' : 'Vừa'}</div>
                           <div className="text-[10px] font-black text-slate-400 uppercase">x {item.quantity}</div>
                         </div>
                       </div>
                       <div className="mt-4 pt-4 border-t border-slate-50 flex justify-between items-center">
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Thành tiền</span>
                         <span className="text-sm font-bold text-slate-900">
-                          {((item.product.salePrice || item.product.price) * item.quantity).toLocaleString()}đ
+                          {(item.unitPrice * item.quantity).toLocaleString()}đ
                         </span>
                       </div>
                     </div>

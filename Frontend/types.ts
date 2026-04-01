@@ -33,11 +33,19 @@ export interface Product {
   promotionText?: string;
   stock?: number;
   totalSold?: number;
+  sizePrices?: {
+    medium: number;
+    large: number;
+  };
 }
+
+export type ProductSize = 'medium' | 'large';
 
 export interface CartItem {
   product: Product;
   quantity: number;
+  size: ProductSize;
+  unitPrice: number;
 }
 
 // ─── Status đồng bộ với backend enum ─────────────────────────────────────────

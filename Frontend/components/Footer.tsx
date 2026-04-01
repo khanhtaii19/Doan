@@ -1,11 +1,11 @@
 
 import React from 'react';
-import { Facebook, Instagram, Send, Twitter } from 'lucide-react';
+import { Facebook, Instagram, Send, Twitter, Phone, MessageCircle } from 'lucide-react';
 
 const Footer: React.FC = () => {
   return (
     <footer className="bg-[#0b1221] text-white pt-20 pb-10">
-      <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+      <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 mb-16">
         <div>
           <div className="flex items-center gap-1 mb-6">
             <span className="text-2xl font-extrabold">Nghien</span>
@@ -59,6 +59,37 @@ const Footer: React.FC = () => {
             <button className="absolute right-2 top-2 bg-[#ff5c62] p-2 rounded-lg hover:bg-[#ee4b51] transition-colors">
               <Send size={18} />
             </button>
+          </div>
+        </div>
+
+        <div>
+          <h4 className="text-lg font-bold mb-6">Liên hệ nhanh</h4>
+          <div className="space-y-3">
+            <a
+              href="tel:0901234567"
+              className="flex items-center gap-3 bg-slate-800/60 px-4 py-3 rounded-xl text-slate-300 hover:text-white hover:bg-[#ff5c62] transition-colors"
+            >
+              <Phone size={16} />
+              <span className="font-semibold">Gọi điện: 0901 234 567</span>
+            </a>
+            <a
+              href="https://m.me/"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-3 bg-slate-800/60 px-4 py-3 rounded-xl text-slate-300 hover:text-white hover:bg-blue-600 transition-colors"
+            >
+              <MessageCircle size={16} />
+              <span className="font-semibold">Chat with me</span>
+            </a>
+            <a
+              href="https://zalo.me/0901234567"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-3 bg-slate-800/60 px-4 py-3 rounded-xl text-slate-300 hover:text-white hover:bg-sky-600 transition-colors"
+            >
+              <MessageCircle size={16} />
+              <span className="font-semibold">Zalo: 0901 234 567</span>
+            </a>
           </div>
         </div>
       </div>
