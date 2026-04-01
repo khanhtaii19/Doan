@@ -208,7 +208,7 @@ const Admin: React.FC<AdminProps> = ({ products, categories, coupons, settings, 
              </button>
           </div>
         </div>
-        <iframe title="test1" width="1140" height="541.25" src="https://app.powerbi.com/reportEmbed?reportId=ef6a9611-07bc-4d37-90e5-babe832debba&autoAuth=true&ctid=3011a54b-0a5d-4929-bf02-a00787877c6a" frameborder="0" allowFullScreen="true"></iframe>
+        {/* <iframe title="test1" width="1140" height="541.25" src="https://app.powerbi.com/reportEmbed?reportId=ef6a9611-07bc-4d37-90e5-babe832debba&autoAuth=true&ctid=3011a54b-0a5d-4929-bf02-a00787877c6a" frameborder="0" allowFullScreen="true"></iframe> */}
         {activeTab === 'dashboard' && (
           <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* KPI Cards */}
