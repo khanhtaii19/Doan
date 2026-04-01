@@ -8,6 +8,7 @@ import authRoutes from './routes/authRoutes';
 import blogRoutes from './routes/blogRoutes';
 import categoryRoutes from './routes/categoryRoutes';
 import couponRoutes from './routes/couponRoutes';
+import chatRoutes from './routes/chatRoutes';
 
 dotenv.config();
 
@@ -44,6 +45,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/blog', blogRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/coupons', couponRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Health check
 app.get('/health', (req: Request, res: Response) => {
