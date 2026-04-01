@@ -76,7 +76,7 @@ const Footer: React.FC = () => {
               <span className="font-semibold">Gọi điện: 0901 234 567</span>
             </a>
             <a
-              href="https://m.me/"
+              href="https://www.messenger.com/e2ee/t/1189176076103895/"
               target="_blank"
               rel="noreferrer"
               className="flex items-center gap-3 bg-slate-800/60 px-4 py-3 rounded-xl text-slate-300 hover:text-white hover:bg-blue-600 transition-colors"

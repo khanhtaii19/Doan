@@ -12,6 +12,7 @@ import OrderSuccess from './pages/OrderSuccess';
 import Orders from './pages/Orders';
 import OrderDetailView from './pages/OrderDetailView';
 import CartDrawer from './components/CartDrawer';
+import ChatWidget from './components/ChatWidget';
 import CRM from './pages/CRM';
 import { Product, Category, Coupon, User, CartItem, Order, AppSettings, BlogPost as BlogPostType, ProductSize } from './types';
 import { api } from './services';
@@ -163,6 +164,13 @@ const App: React.FC = () => {
     };
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (currentUser?.role !== 'admin') return;
+    api.getUsers().then(setUsers).catch(() => {
+      // ignore
+    });
+  }, [currentUser]);
 
   // ─── Load orders ─────────────────────────────────────────
   const loadOrders = async (user: User | null, productList: Product[] = products) => {
@@ -485,6 +493,11 @@ const App: React.FC = () => {
       </main>
 
       {['home', 'shop', 'blog', 'orders', 'order-detail'].includes(currentPage) && <Footer />}
+      <ChatWidget
+        currentUser={currentUser}
+        users={users}
+        onNavigateLogin={() => handleNavigate('login')}
+      />
     </div>
   );
 };

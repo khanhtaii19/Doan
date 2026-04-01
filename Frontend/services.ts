@@ -1,4 +1,8 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const rawApiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const normalizedApiBase = rawApiBase.replace(/\/+$/, '');
+const API_BASE = normalizedApiBase.endsWith('/api')
+  ? normalizedApiBase
+  : `${normalizedApiBase}/api`;
 
 export const getToken = () => localStorage.getItem('shop_token');
 
@@ -133,6 +137,48 @@ export const api = {
       ...p,
       id: p._id || p.id,
       date: p.date?.split('T')[0] ?? p.date
+    }));
+  },
+
+  getChatMessages: async (withUserId?: string) => {
+    const query = withUserId ? `?withUserId=${encodeURIComponent(withUserId)}` : '';
+    const res = await fetch(`${API_BASE}/chat/messages${query}`, { headers: authHeaders() });
+    const data = await handleResponse(res);
+    return {
+      messages: (data.data || []).map((m: any) => ({
+        ...m,
+        id: m._id || m.id
+      })),
+      peerUser: data.peerUser || null
+    };
+  },
+
+  sendChatMessage: async (text: string, toUserId?: string) => {
+    const res = await fetch(`${API_BASE}/chat/messages`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ text, toUserId })
+    });
+    const data = await handleResponse(res);
+    return {
+      ...data.data,
+      id: data.data._id || data.data.id
+    };
+  },
+
+  getChatConversations: async () => {
+    const res = await fetch(`${API_BASE}/chat/conversations`, { headers: authHeaders() });
+    const data = await handleResponse(res);
+    return (data.data || []).map((c: any) => ({
+      ...c,
+      lastMessage: {
+        ...c.lastMessage,
+        id: c.lastMessage?._id || c.lastMessage?.id
+      },
+      peerUser: {
+        ...c.peerUser,
+        id: c.peerUser?._id || c.peerUser?.id
+      }
     }));
   }
 };

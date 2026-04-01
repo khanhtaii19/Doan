@@ -121,3 +121,16 @@ export interface BlogPost {
   content?: string[];
   tags?: string[];
 }
+
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  receiverId: string;
+  text: string;
+  createdAt: string;
+}
+
+export interface ChatConversation {
+  peerUser: User;
+  lastMessage: ChatMessage;
+}
