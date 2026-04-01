@@ -46,7 +46,25 @@ export const api = {
   getUsers: async () => {
     const res = await fetch(`${API_BASE}/auth/users`, { headers: authHeaders() });
     const data = await handleResponse(res);
-    return data.data.map((u: any) => ({ ...u, id: u._id || u.id }));
+    return data.data.map((u: any) => ({
+      ...u,
+      id: u._id || u.id,
+      joinedAt: u.joinedAt || u.createdAt
+    }));
+  },
+
+  updateUser: async (id: string, payload: any) => {
+    const res = await fetch(`${API_BASE}/auth/users/${id}`, {
+      method: 'PUT',
+      headers: authHeaders(),
+      body: JSON.stringify(payload)
+    });
+    const data = await handleResponse(res);
+    return {
+      ...data.data,
+      id: data.data._id || data.data.id,
+      joinedAt: data.data.joinedAt || data.data.createdAt
+    };
   },
 
   getProducts: async () => {
@@ -56,20 +74,22 @@ export const api = {
   },
 
   createProduct: async (product: any) => {
+    const { id, _id, ...createPayload } = product || {};
     const res = await fetch(`${API_BASE}/products`, {
       method: 'POST',
       headers: authHeaders(),
-      body: JSON.stringify(product)
+      body: JSON.stringify(createPayload)
     });
     const data = await handleResponse(res);
     return { ...data.data, id: data.data._id || data.data.id };
   },
 
   updateProduct: async (product: any) => {
+    const { id, _id, ...updatePayload } = product || {};
     const res = await fetch(`${API_BASE}/products/${product.id}`, {
       method: 'PUT',
       headers: authHeaders(),
-      body: JSON.stringify(product)
+      body: JSON.stringify(updatePayload)
     });
     const data = await handleResponse(res);
     return { ...data.data, id: data.data._id || data.data.id };

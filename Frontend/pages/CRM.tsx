@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { User, Order } from '../types';
 import { Search, User as UserIcon, Calendar, CreditCard, ChevronRight, Award, History, Filter, ArrowLeft } from 'lucide-react';
 
@@ -7,12 +7,19 @@ interface CRMProps {
   users: User[];
   orders: Order[];
   onBack: () => void;
+  onUpdateUser: (id: string, payload: Partial<User>) => Promise<void>;
 }
 
-const CRM: React.FC<CRMProps> = ({ users, orders, onBack }) => {
+const CRM: React.FC<CRMProps> = ({ users, orders, onBack, onUpdateUser }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [levelFilter, setLevelFilter] = useState<string>('All');
+  const [editName, setEditName] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editMemberLevel, setEditMemberLevel] = useState<User['memberLevel']>('Silver');
+  const [editIsActive, setEditIsActive] = useState(true);
+  const [editTotalSpent, setEditTotalSpent] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
 
   const filteredUsers = users.filter(u => 
     (u.name.toLowerCase().includes(searchTerm.toLowerCase()) || u.email.toLowerCase().includes(searchTerm.toLowerCase())) &&
@@ -24,12 +31,59 @@ const CRM: React.FC<CRMProps> = ({ users, orders, onBack }) => {
     return orders.filter(o => o.userId === userId);
   };
 
+  const getUserTotalSpent = (userId: string) => {
+    return getUserOrders(userId).reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+  };
+
+  useEffect(() => {
+    if (!selectedUser) return;
+    setEditName(selectedUser.name || '');
+    setEditPhone(selectedUser.phone || '');
+    setEditMemberLevel((selectedUser.memberLevel as User['memberLevel']) || 'Silver');
+    setEditIsActive(selectedUser.isActive ?? true);
+    setEditTotalSpent(Number(selectedUser.totalSpent ?? getUserTotalSpent(selectedUser.id) ?? 0));
+  }, [selectedUser]);
+
   const getLevelColor = (level?: string) => {
     switch (level) {
       case 'Diamond': return 'bg-blue-100 text-blue-700 border-blue-200';
       case 'Gold': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
       case 'Silver': return 'bg-slate-100 text-slate-700 border-slate-200';
       default: return 'bg-gray-100 text-gray-700 border-gray-200';
+    }
+  };
+
+  const handleSaveCustomer = async () => {
+    if (!selectedUser) return;
+    const trimmedName = editName.trim();
+    if (!trimmedName) {
+      alert('Vui long nhap ten khach hang.');
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      await onUpdateUser(selectedUser.id, {
+        name: trimmedName,
+        phone: editPhone.trim(),
+        memberLevel: editMemberLevel || 'Silver',
+        isActive: editIsActive,
+        totalSpent: Math.max(0, Number(editTotalSpent) || 0)
+      });
+      setSelectedUser(prev => prev ? {
+        ...prev,
+        name: trimmedName,
+        phone: editPhone.trim(),
+        memberLevel: editMemberLevel || 'Silver',
+        isActive: editIsActive,
+        totalSpent: Math.max(0, Number(editTotalSpent) || 0)
+      } : prev);
+      alert('Cap nhat khach hang thanh cong.');
+    } catch (error) {
+      console.error('Loi cap nhat khach hang:', error);
+      alert('Khong the cap nhat khach hang. Vui long thu lai.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -93,6 +147,9 @@ const CRM: React.FC<CRMProps> = ({ users, orders, onBack }) => {
                     <div className="flex-grow min-w-0">
                       <div className="font-bold text-slate-900 truncate">{user.name}</div>
                       <div className="text-xs text-slate-500 truncate">{user.email}</div>
+                      <div className={`mt-1 inline-block px-2 py-0.5 rounded-full text-[10px] font-black uppercase border ${user.isActive === false ? 'bg-red-50 text-red-600 border-red-200' : 'bg-emerald-50 text-emerald-600 border-emerald-200'}`}>
+                        {user.isActive === false ? 'Tam khoa' : 'Dang hoat dong'}
+                      </div>
                     </div>
                     <div className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase border ${getLevelColor(user.memberLevel)}`}>
                       {user.memberLevel}
@@ -123,6 +180,9 @@ const CRM: React.FC<CRMProps> = ({ users, orders, onBack }) => {
                         <span className={`px-3 py-1 rounded-full text-xs font-black uppercase border ${getLevelColor(selectedUser.memberLevel)}`}>
                           {selectedUser.memberLevel} Member
                         </span>
+                        <span className={`px-3 py-1 rounded-full text-xs font-black uppercase border ${selectedUser.isActive === false ? 'bg-red-50 text-red-600 border-red-200' : 'bg-emerald-50 text-emerald-600 border-emerald-200'}`}>
+                          {selectedUser.isActive === false ? 'Tam khoa' : 'Dang hoat dong'}
+                        </span>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-slate-500 font-medium">
                         <div className="flex items-center gap-2"><UserIcon size={16} /> {selectedUser.email}</div>
@@ -132,7 +192,7 @@ const CRM: React.FC<CRMProps> = ({ users, orders, onBack }) => {
                     </div>
                     <div className="bg-slate-900 text-white p-6 rounded-[2rem] shadow-xl min-w-[180px]">
                       <div className="text-[10px] font-black uppercase tracking-widest opacity-50 mb-1">Tổng chi tiêu</div>
-                      <div className="text-2xl font-black">{(selectedUser.totalSpent || 0).toLocaleString()}đ</div>
+                      <div className="text-2xl font-black">{Number((selectedUser.totalSpent ?? getUserTotalSpent(selectedUser.id)) || 0).toLocaleString()}đ</div>
                     </div>
                   </div>
                 </div>
@@ -161,7 +221,7 @@ const CRM: React.FC<CRMProps> = ({ users, orders, onBack }) => {
                       <tbody className="divide-y divide-slate-100">
                         {getUserOrders(selectedUser.id).map(order => (
                           <tr key={order.id} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="px-8 py-6 font-bold text-slate-900">#{order.id.split('-')[1]}</td>
+                            <td className="px-8 py-6 font-bold text-slate-900">#{order.id.slice(-6)}</td>
                             <td className="px-8 py-6 text-sm text-slate-500">{new Date(order.createdAt).toLocaleDateString('vi-VN')}</td>
                             <td className="px-8 py-6">
                               <div className="text-sm font-medium text-slate-700">
@@ -171,11 +231,21 @@ const CRM: React.FC<CRMProps> = ({ users, orders, onBack }) => {
                             <td className="px-8 py-6 font-black text-slate-900">{order.totalAmount.toLocaleString()}đ</td>
                             <td className="px-8 py-6 text-right">
                               <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${
-                                order.status === 'completed' ? 'bg-green-100 text-green-600' :
+                                order.status === 'completed' || order.status === 'delivered' ? 'bg-green-100 text-green-600' :
                                 order.status === 'processing' ? 'bg-blue-100 text-blue-600' :
+                                order.status === 'shipped' ? 'bg-amber-100 text-amber-700' :
+                                order.status === 'cancelled' ? 'bg-red-100 text-red-600' :
                                 'bg-slate-100 text-slate-600'
                               }`}>
-                                {order.status === 'completed' ? 'Hoàn tất' : order.status === 'processing' ? 'Đang xử lý' : 'Chờ duyệt'}
+                                {order.status === 'completed' || order.status === 'delivered'
+                                  ? 'Hoan tat'
+                                  : order.status === 'processing'
+                                  ? 'Dang xu ly'
+                                  : order.status === 'shipped'
+                                  ? 'Da giao'
+                                  : order.status === 'cancelled'
+                                  ? 'Da huy'
+                                  : 'Cho duyet'}
                               </span>
                             </td>
                           </tr>
@@ -187,6 +257,73 @@ const CRM: React.FC<CRMProps> = ({ users, orders, onBack }) => {
                         )}
                       </tbody>
                     </table>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-200">
+                  <h3 className="text-xl font-bold text-slate-900 mb-6">Cap nhat thong tin khach hang</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Ten khach hang</label>
+                      <input
+                        type="text"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm font-medium outline-none focus:border-[#ff5c62] transition-all focus:bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">So dien thoai</label>
+                      <input
+                        type="text"
+                        value={editPhone}
+                        onChange={(e) => setEditPhone(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm font-medium outline-none focus:border-[#ff5c62] transition-all focus:bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Tong chi tieu</label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={editTotalSpent}
+                        onChange={(e) => setEditTotalSpent(Number(e.target.value))}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm font-medium outline-none focus:border-[#ff5c62] transition-all focus:bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Hang thanh vien</label>
+                      <select
+                        value={editMemberLevel || 'Silver'}
+                        onChange={(e) => setEditMemberLevel(e.target.value as User['memberLevel'])}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm font-medium outline-none focus:border-[#ff5c62] transition-all focus:bg-white"
+                      >
+                        <option value="Silver">Silver</option>
+                        <option value="Gold">Gold</option>
+                        <option value="Diamond">Diamond</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Trang thai</label>
+                      <select
+                        value={editIsActive ? 'active' : 'inactive'}
+                        onChange={(e) => setEditIsActive(e.target.value === 'active')}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm font-medium outline-none focus:border-[#ff5c62] transition-all focus:bg-white"
+                      >
+                        <option value="active">Dang hoat dong</option>
+                        <option value="inactive">Tam khoa</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="pt-6 flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={handleSaveCustomer}
+                      disabled={isSaving}
+                      className="bg-[#ff5c62] text-white px-6 py-3 rounded-2xl font-black hover:bg-[#ee4b51] transition-all disabled:opacity-60"
+                    >
+                      {isSaving ? 'Dang luu...' : 'Luu cap nhat'}
+                    </button>
                   </div>
                 </div>
               </div>
@@ -207,3 +344,4 @@ const CRM: React.FC<CRMProps> = ({ users, orders, onBack }) => {
 };
 
 export default CRM;
+

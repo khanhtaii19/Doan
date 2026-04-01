@@ -11,6 +11,7 @@ export interface User {
   memberLevel?: MemberLevel;
   totalSpent?: number;
   joinedAt?: string;
+  isActive?: boolean;
 }
 
 export interface Category {

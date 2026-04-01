@@ -11,9 +11,9 @@ interface AdminProps {
   coupons: Coupon[];
   settings: AppSettings;
   orders: Order[];
-  onAddProduct: (product: Product) => void;
-  onUpdateProduct: (product: Product) => void;
-  onDeleteProduct: (id: string) => void;
+  onAddProduct: (product: Product) => void | Promise<void>;
+  onUpdateProduct: (product: Product) => void | Promise<void>;
+  onDeleteProduct: (id: string) => void | Promise<void>;
   onUpdateSettings: (newSettings: AppSettings) => void;
   onNavigateCRM: () => void;
 }
@@ -73,17 +73,30 @@ const Admin: React.FC<AdminProps> = ({ products, categories, coupons, settings, 
     setIsEditing(false);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const mediumPrice = formData.sizePrices?.medium || formData.price || 0;
-    const largePrice = formData.sizePrices?.large || 0;
-    if (!formData.name || mediumPrice <= 0 || largePrice <= 0) {
-      alert('Vui lòng điền đầy đủ thông tin và giá món ăn hợp lệ');
+    const name = (formData.name || '').trim();
+    const mediumPrice = Number(formData.sizePrices?.medium || formData.price || 0);
+    const largePrice = Number(formData.sizePrices?.large || 0);
+    const costPrice = Number(formData.costPrice || 0);
+    const stock = Number(formData.stock || 0);
+    const categoryId = formData.categoryId || categories[0]?.id || '';
+
+    if (!name || !categoryId || mediumPrice <= 0 || largePrice <= 0 || costPrice < 0 || stock < 0) {
+      alert('Vui long dien day du thong tin hop le: ten, danh muc, gia ban, gia von va ton kho.');
       return;
     }
 
     const payload = {
       ...formData,
+      name,
+      categoryId,
+      description: (formData.description || `Mon ${name} thom ngon, chuan vi, phuc vu nhanh.`).trim(),
+      details: (formData.details || `Nguyen lieu chon loc cho mon ${name}.`).trim(),
+      image: (formData.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=2080&auto=format&fit=crop').trim(),
+      costPrice,
+      stock,
+      salePrice: mediumPrice,
       price: mediumPrice,
       sizePrices: {
         medium: mediumPrice,
@@ -91,12 +104,17 @@ const Admin: React.FC<AdminProps> = ({ products, categories, coupons, settings, 
       }
     };
 
-    if (editingId) {
-      onUpdateProduct({ ...payload, id: editingId } as Product);
-    } else {
-      onAddProduct({ ...payload, id: `p-${Date.now()}`, totalSold: 0 } as Product);
+    try {
+      if (editingId) {
+        await onUpdateProduct({ ...payload, id: editingId } as Product);
+      } else {
+        await onAddProduct({ ...payload, id: `p-${Date.now()}`, totalSold: 0 } as Product);
+      }
+      handleResetForm();
+    } catch (error) {
+      console.error('Loi luu mon an:', error);
+      alert('Khong the luu mon an. Vui long kiem tra lai du lieu va thu lai.');
     }
-    handleResetForm();
   };
 
   const filteredProducts = products.filter(p => 
@@ -703,3 +721,4 @@ const Admin: React.FC<AdminProps> = ({ products, categories, coupons, settings, 
 };
 
 export default Admin;
+

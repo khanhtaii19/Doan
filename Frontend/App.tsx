@@ -466,23 +466,49 @@ const App: React.FC = () => {
             settings={settings}
             orders={orders}
             onAddProduct={async (p) => {
-              const created = await api.createProduct(p);
-              setProducts([created, ...products]);
+              try {
+                const created = await api.createProduct(p);
+                setProducts(prev => [created, ...prev]);
+              } catch (error) {
+                console.error('Khong the them mon an:', error);
+                alert('Khong the them mon an. Vui long thu lai.');
+                throw error;
+              }
             }}
             onUpdateProduct={async (p) => {
-              const updated = await api.updateProduct(p);
-              setProducts(products.map(old => old.id === updated.id ? updated : old));
+              try {
+                const updated = await api.updateProduct(p);
+                setProducts(prev => prev.map(old => old.id === updated.id ? updated : old));
+              } catch (error) {
+                console.error('Khong the cap nhat mon an:', error);
+                alert('Khong the cap nhat mon an. Vui long thu lai.');
+                throw error;
+              }
             }}
             onDeleteProduct={async (id) => {
-              await api.deleteProduct(id);
-              setProducts(products.filter(p => p.id !== id));
+              try {
+                await api.deleteProduct(id);
+                setProducts(prev => prev.filter(p => p.id !== id));
+              } catch (error) {
+                console.error('Khong the xoa mon an:', error);
+                alert('Khong the xoa mon an. Vui long thu lai.');
+                throw error;
+              }
             }}
             onUpdateSettings={setSettings}
             onNavigateCRM={() => handleNavigate('crm')}
           />
         )}
         {currentPage === 'crm' && (
-          <CRM users={users} orders={orders} onBack={() => handleNavigate('admin')} />
+          <CRM
+            users={users}
+            orders={orders}
+            onBack={() => handleNavigate('admin')}
+            onUpdateUser={async (id, payload) => {
+              const updated = await api.updateUser(id, payload);
+              setUsers(prev => prev.map(u => (u.id === updated.id ? { ...u, ...updated } : u)));
+            }}
+          />
         )}
         {currentPage === 'login' && (
           <Login
