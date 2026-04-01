@@ -6,50 +6,51 @@ interface OrderDetailViewProps {
   order: Order;
   onBack: () => void;
   onUpdateStatus: (orderId: string, status: OrderStatus) => void;
+  canUpdateStatus?: boolean;
 }
 
-// ─── Config trạng thái — 1 chỗ duy nhất, dùng ở cả badge lẫn nút ────────────
+// --- Config tr?ng th�i � 1 ch? duy nh?t, d�ng ? c? badge l?n n�t -----------
 const STATUS_CONFIG: Record<OrderStatus, {
   label: string;
   badgeClass: string;
   icon: React.ReactNode;
 }> = {
   pending: {
-    label: 'Chờ xác nhận',
+    label: 'Ch? x�c nh?n',
     badgeClass: 'bg-yellow-50 text-yellow-600 border-yellow-100',
     icon: <Clock size={18} />
   },
   processing: {
-    label: 'Đang chế biến',
+    label: '�ang ch? bi?n',
     badgeClass: 'bg-blue-50 text-blue-600 border-blue-100',
     icon: <Loader2 size={18} className="animate-spin" />
   },
   shipped: {
-    label: 'Đang giao hàng',
+    label: '�ang giao h�ng',
     badgeClass: 'bg-purple-50 text-purple-600 border-purple-100',
     icon: <Navigation size={18} />
   },
   delivered: {
-    label: 'Đã giao thành công',
+    label: '�� giao th�nh c�ng',
     badgeClass: 'bg-green-50 text-green-600 border-green-100',
     icon: <CheckCircle2 size={18} />
   },
   cancelled: {
-    label: 'Đã huỷ',
+    label: '�� hu?',
     badgeClass: 'bg-red-50 text-red-500 border-red-100',
     icon: <XCircle size={18} />
   }
 };
 
-// Các nút admin có thể bấm để chuyển trạng thái
+// C�c n�t admin c� th? b?m d? chuy?n tr?ng th�i
 const STATUS_ACTIONS: { status: OrderStatus; label: string; activeClass: string; hoverClass: string }[] = [
-  { status: 'processing', label: 'Chế biến',   activeClass: 'bg-blue-600 text-white shadow-lg shadow-blue-100',   hoverClass: 'hover:bg-blue-50 hover:text-blue-500' },
-  { status: 'shipped',    label: 'Giao hàng',  activeClass: 'bg-purple-600 text-white shadow-lg shadow-purple-100', hoverClass: 'hover:bg-purple-50 hover:text-purple-500' },
-  { status: 'delivered',  label: 'Hoàn tất',   activeClass: 'bg-green-600 text-white shadow-lg shadow-green-100',  hoverClass: 'hover:bg-green-50 hover:text-green-500' },
-  { status: 'cancelled',  label: 'Huỷ đơn',   activeClass: 'bg-red-500 text-white shadow-lg shadow-red-100',      hoverClass: 'hover:bg-red-50 hover:text-red-500' },
+  { status: 'processing', label: 'Ch? bi?n',   activeClass: 'bg-blue-600 text-white shadow-lg shadow-blue-100',   hoverClass: 'hover:bg-blue-50 hover:text-blue-500' },
+  { status: 'shipped',    label: 'Giao h�ng',  activeClass: 'bg-purple-600 text-white shadow-lg shadow-purple-100', hoverClass: 'hover:bg-purple-50 hover:text-purple-500' },
+  { status: 'delivered',  label: 'Ho�n t?t',   activeClass: 'bg-green-600 text-white shadow-lg shadow-green-100',  hoverClass: 'hover:bg-green-50 hover:text-green-500' },
+  { status: 'cancelled',  label: 'Hu? don',   activeClass: 'bg-red-500 text-white shadow-lg shadow-red-100',      hoverClass: 'hover:bg-red-50 hover:text-red-500' },
 ];
 
-const OrderDetailView: React.FC<OrderDetailViewProps> = ({ order, onBack, onUpdateStatus }) => {
+const OrderDetailView: React.FC<OrderDetailViewProps> = ({ order, onBack, onUpdateStatus, canUpdateStatus = false }) => {
   const getPaymentIcon = (method: string) => {
     switch (method) {
       case 'momo':     return <Smartphone size={18} className="text-[#A50064]" />;
@@ -62,10 +63,10 @@ const OrderDetailView: React.FC<OrderDetailViewProps> = ({ order, onBack, onUpda
 
   const getPaymentLabel = (method: string) => {
     switch (method) {
-      case 'momo':     return 'Ví MoMo';
+      case 'momo':     return 'V� MoMo';
       case 'zalopay':  return 'ZaloPay';
-      case 'transfer': return 'Chuyển khoản ngân hàng';
-      case 'cod':      return 'Thanh toán khi nhận hàng (COD)';
+      case 'transfer': return 'Chuy?n kho?n ng�n h�ng';
+      case 'cod':      return 'Thanh to�n khi nh?n h�ng (COD)';
       default:         return method;
     }
   };
@@ -83,45 +84,47 @@ const OrderDetailView: React.FC<OrderDetailViewProps> = ({ order, onBack, onUpda
         {/* Navigation & Actions */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <button onClick={onBack} className="flex items-center gap-2 text-slate-500 font-bold hover:text-[#ff5c62] transition-colors">
-            <ChevronLeft size={20} /> Quay lại danh sách đơn
+            <ChevronLeft size={20} /> Quay l?i danh s�ch don
           </button>
           <div className="flex items-center gap-3">
             <button className="flex items-center gap-2 bg-white border border-slate-200 px-5 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all">
-              <Printer size={16} /> In hóa đơn
+              <Printer size={16} /> In h�a don
             </button>
             <button className="flex items-center gap-2 bg-[#ff5c62] px-5 py-2.5 rounded-xl text-sm font-bold text-white shadow-lg shadow-red-100 hover:bg-[#ee4b51] transition-all">
-              Liên hệ hỗ trợ
+              Li�n h? h? tr?
             </button>
           </div>
         </div>
 
         {/* Status Controller Bar */}
-        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm mb-8 flex flex-wrap items-center justify-between gap-6">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-slate-900 text-white rounded-2xl shadow-lg">
-              <Navigation size={20} />
+        {canUpdateStatus && (
+          <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm mb-8 flex flex-wrap items-center justify-between gap-6">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-slate-900 text-white rounded-2xl shadow-lg">
+                <Navigation size={20} />
+              </div>
+              <div>
+                <h4 className="font-black text-slate-900 text-sm uppercase tracking-widest">Qu?n l� tr?ng th�i</h4>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">B?m d? c?p nh?t ti?n d? don h�ng</p>
+              </div>
             </div>
-            <div>
-              <h4 className="font-black text-slate-900 text-sm uppercase tracking-widest">Quản lý trạng thái</h4>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Bấm để cập nhật tiến độ đơn hàng</p>
+            <div className="flex flex-wrap gap-2">
+              {STATUS_ACTIONS.map(({ status, label, activeClass, hoverClass }) => (
+                <button
+                  key={status}
+                  onClick={() => onUpdateStatus(order.id, status)}
+                  className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all
+                    ${order.status === status
+                      ? activeClass
+                      : `bg-slate-50 text-slate-400 ${hoverClass}`
+                    }`}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {STATUS_ACTIONS.map(({ status, label, activeClass, hoverClass }) => (
-              <button
-                key={status}
-                onClick={() => onUpdateStatus(order.id, status)}
-                className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all
-                  ${order.status === status
-                    ? activeClass
-                    : `bg-slate-50 text-slate-400 ${hoverClass}`
-                  }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           {/* Main Content */}
@@ -132,7 +135,7 @@ const OrderDetailView: React.FC<OrderDetailViewProps> = ({ order, onBack, onUpda
               <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-full -mr-16 -mt-16 opacity-50" />
               <div className="flex flex-wrap items-center justify-between gap-6 mb-8 relative z-10">
                 <div>
-                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Mã đơn hàng</div>
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">M� don h�ng</div>
                   <h1 className="text-3xl font-black text-slate-900">#{order.id.slice(-8).toUpperCase()}</h1>
                 </div>
                 <div className={`px-6 py-2.5 rounded-2xl border font-black uppercase text-xs tracking-widest flex items-center gap-2 ${statusInfo.badgeClass}`}>
@@ -143,23 +146,23 @@ const OrderDetailView: React.FC<OrderDetailViewProps> = ({ order, onBack, onUpda
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 pt-8 border-t border-slate-50">
                 <div>
-                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Ngày đặt</div>
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Ng�y d?t</div>
                   <div className="font-bold text-slate-900 text-sm">{new Date(order.createdAt).toLocaleDateString('vi-VN')}</div>
                 </div>
                 <div>
-                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Giờ đặt</div>
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Gi? d?t</div>
                   <div className="font-bold text-slate-900 text-sm">{new Date(order.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</div>
                 </div>
                 <div>
-                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Thanh toán</div>
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Thanh to�n</div>
                   <div className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
                     {getPaymentIcon(order.paymentMethod)}
                     {order.paymentMethod.toUpperCase()}
                   </div>
                 </div>
                 <div>
-                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Vận chuyển</div>
-                  <div className="font-bold text-green-600 text-sm">Giao hỏa tốc</div>
+                  <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">V?n chuy?n</div>
+                  <div className="font-bold text-green-600 text-sm">Giao h?a t?c</div>
                 </div>
               </div>
             </div>
@@ -167,7 +170,7 @@ const OrderDetailView: React.FC<OrderDetailViewProps> = ({ order, onBack, onUpda
             {/* Items List */}
             <div className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm">
               <h3 className="text-xl font-black text-slate-900 mb-8 flex items-center gap-3">
-                <Package className="text-[#ff5c62]" size={24} /> Danh sách món ăn
+                <Package className="text-[#ff5c62]" size={24} /> Danh s�ch m�n an
               </h3>
               <div className="space-y-6">
                 {order.items.map((item, idx) => (
@@ -182,22 +185,22 @@ const OrderDetailView: React.FC<OrderDetailViewProps> = ({ order, onBack, onUpda
                       <div className="flex justify-between items-start">
                         <div>
                           <h4 className="font-bold text-slate-900 mb-1 group-hover:text-[#ff5c62] transition-colors">
-                            {item.product.name || `Sản phẩm #${item.product.id?.slice(-4)}`}
+                            {item.product.name || `S?n ph?m #${item.product.id?.slice(-4)}`}
                           </h4>
                           {item.product.description && (
                             <p className="text-xs text-slate-400 font-medium line-clamp-1">{item.product.description}</p>
                           )}
                         </div>
                         <div className="text-right">
-                          <div className="font-black text-slate-900">{item.unitPrice.toLocaleString()}đ</div>
-                          <div className="text-[10px] font-black text-slate-400 uppercase">Size {item.size === 'large' ? 'Lớn' : 'Vừa'}</div>
+                          <div className="font-black text-slate-900">{item.unitPrice.toLocaleString()}d</div>
+                          <div className="text-[10px] font-black text-slate-400 uppercase">Size {item.size === 'large' ? 'L?n' : 'V?a'}</div>
                           <div className="text-[10px] font-black text-slate-400 uppercase">x {item.quantity}</div>
                         </div>
                       </div>
                       <div className="mt-4 pt-4 border-t border-slate-50 flex justify-between items-center">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Thành tiền</span>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Th�nh ti?n</span>
                         <span className="text-sm font-bold text-slate-900">
-                          {(item.unitPrice * item.quantity).toLocaleString()}đ
+                          {(item.unitPrice * item.quantity).toLocaleString()}d
                         </span>
                       </div>
                     </div>
@@ -213,32 +216,32 @@ const OrderDetailView: React.FC<OrderDetailViewProps> = ({ order, onBack, onUpda
             {/* Customer Info */}
             <div className="bg-slate-900 rounded-[2.5rem] p-10 text-white shadow-xl border border-white/5">
               <h3 className="text-lg font-bold mb-8 flex items-center gap-2">
-                <MapPin size={20} className="text-[#ff5c62]" /> Thông tin nhận hàng
+                <MapPin size={20} className="text-[#ff5c62]" /> Th�ng tin nh?n h�ng
               </h3>
               {order.customerInfo?.name ? (
                 <div className="space-y-6">
                   <div>
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Người nhận</label>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Ngu?i nh?n</label>
                     <div className="font-bold text-white flex items-center gap-2">
                       {order.customerInfo.name}
                       <ExternalLink size={14} className="text-slate-600" />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Liên lạc</label>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Li�n l?c</label>
                     <div className="space-y-2">
                       <div className="flex items-center gap-3 text-sm font-medium text-slate-300">
                         <Phone size={14} className="text-[#ff5c62]" />
-                        {order.customerInfo.phone || '—'}
+                        {order.customerInfo.phone || '�'}
                       </div>
                       <div className="flex items-center gap-3 text-sm font-medium text-slate-300">
                         <Mail size={14} className="text-[#ff5c62]" />
-                        {order.customerInfo.email || '—'}
+                        {order.customerInfo.email || '�'}
                       </div>
                     </div>
                   </div>
                   <div className="pt-6 border-t border-slate-800">
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Địa chỉ giao hàng</label>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">�?a ch? giao h�ng</label>
                     <p className="text-sm text-slate-300 leading-relaxed font-medium">
                       {order.customerInfo.addressDetail && <>{order.customerInfo.addressDetail},<br /></>}
                       {order.customerInfo.ward && <>{order.customerInfo.ward}, </>}
@@ -248,37 +251,37 @@ const OrderDetailView: React.FC<OrderDetailViewProps> = ({ order, onBack, onUpda
                   </div>
                 </div>
               ) : (
-                <p className="text-slate-500 text-sm italic">Chưa có thông tin nhận hàng.</p>
+                <p className="text-slate-500 text-sm italic">Chua c� th�ng tin nh?n h�ng.</p>
               )}
             </div>
 
             {/* Payment Summary */}
             <div className="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm">
               <h3 className="text-lg font-bold text-slate-900 mb-8 flex items-center gap-2">
-                <CreditCard size={20} className="text-blue-500" /> Thanh toán
+                <CreditCard size={20} className="text-blue-500" /> Thanh to�n
               </h3>
               <div className="space-y-4 mb-8">
                 <div className="flex justify-between text-sm font-medium">
-                  <span className="text-slate-400">Tạm tính ({order.items.length} món)</span>
-                  <span className="text-slate-900">{subtotal.toLocaleString()}đ</span>
+                  <span className="text-slate-400">T?m t�nh ({order.items.length} m�n)</span>
+                  <span className="text-slate-900">{subtotal.toLocaleString()}d</span>
                 </div>
                 <div className="flex justify-between text-sm font-medium">
-                  <span className="text-slate-400">Phí vận chuyển</span>
-                  <span className="text-slate-900">30.000đ</span>
+                  <span className="text-slate-400">Ph� v?n chuy?n</span>
+                  <span className="text-slate-900">30.000d</span>
                 </div>
                 <div className="flex justify-between text-sm font-medium">
-                  <span className="text-slate-400">Giảm giá</span>
-                  <span className="text-green-600">0đ</span>
+                  <span className="text-slate-400">Gi?m gi�</span>
+                  <span className="text-green-600">0d</span>
                 </div>
               </div>
               <div className="pt-6 border-t border-slate-100 flex justify-between items-center mb-8">
-                <span className="font-black text-slate-900">Tổng cộng</span>
-                <span className="text-2xl font-black text-[#ff5c62]">{order.totalAmount.toLocaleString()}đ</span>
+                <span className="font-black text-slate-900">T?ng c?ng</span>
+                <span className="text-2xl font-black text-[#ff5c62]">{order.totalAmount.toLocaleString()}d</span>
               </div>
               <div className="bg-slate-50 p-4 rounded-2xl flex items-center gap-4">
                 {getPaymentIcon(order.paymentMethod)}
                 <div className="text-[11px] font-bold text-slate-500 leading-tight">
-                  Phương thức:<br />
+                  Phuong th?c:<br />
                   <span className="text-slate-900 uppercase tracking-tighter">{getPaymentLabel(order.paymentMethod)}</span>
                 </div>
               </div>

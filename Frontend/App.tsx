@@ -274,6 +274,10 @@ const App: React.FC = () => {
   };
 
   const handleUpdateOrderStatus = async (orderId: string, status: Order['status']) => {
+    if (currentUser?.role !== 'admin') {
+      alert('Bạn không có quyền cập nhật trạng thái đơn hàng.');
+      return;
+    }
     try {
       await api.updateOrderStatus(orderId, status);
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o));
@@ -418,6 +422,7 @@ const App: React.FC = () => {
             order={selectedOrder}
             onBack={() => setCurrentPage('orders')}
             onUpdateStatus={handleUpdateOrderStatus}
+            canUpdateStatus={currentUser?.role === 'admin'}
           />
         )}
         {currentPage === 'product-detail' && selectedProduct && (

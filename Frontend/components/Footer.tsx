@@ -15,13 +15,16 @@ const Footer: React.FC = () => {
             Chuyên cung cấp các dịch vụ ẩm thực chất lượng cao, mang đến những bữa ăn ngon miệng và an toàn cho gia đình bạn.
           </p>
           <div className="flex gap-4">
-            <a href="#" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-[#ff5c62] transition-colors">
+            <a href="https://www.facebook.com/khanhtai.pham.578" target="_blank"
+              rel="noreferrer" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-[#ff5c62] transition-colors">
               <Facebook size={18} />
             </a>
-            <a href="#" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-[#ff5c62] transition-colors">
+            <a href="https://www.instagram.com/_tai.phamm/" target="_blank"
+              rel="noreferrer" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-[#ff5c62] transition-colors">
               <Instagram size={18} />
             </a>
-            <a href="#" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-[#ff5c62] transition-colors">
+            <a href="#" target="_blank"
+              rel="noreferrer" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-[#ff5c62] transition-colors">
               <Twitter size={18} />
             </a>
           </div>
@@ -82,13 +85,13 @@ const Footer: React.FC = () => {
               <span className="font-semibold">Chat with me</span>
             </a>
             <a
-              href="https://zalo.me/0901234567"
+              href="https://zalo.me/0948247758"
               target="_blank"
               rel="noreferrer"
               className="flex items-center gap-3 bg-slate-800/60 px-4 py-3 rounded-xl text-slate-300 hover:text-white hover:bg-sky-600 transition-colors"
             >
               <MessageCircle size={16} />
-              <span className="font-semibold">Zalo: 0901 234 567</span>
+              <span className="font-semibold">Liên hệ Zalo</span>
             </a>
           </div>
         </div>
