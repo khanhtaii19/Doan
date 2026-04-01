@@ -143,3 +143,42 @@ export const getUsers = async (req: Request, res: Response) => {
   }
 };
 
+export const updateUserByAdmin = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { name, phone, memberLevel, isActive, totalSpent } = req.body;
+
+    const updatePayload: Record<string, any> = {};
+
+    if (typeof name === 'string') updatePayload.name = name.trim();
+    if (typeof phone === 'string') updatePayload.phone = phone.trim();
+    if (typeof memberLevel === 'string') updatePayload.memberLevel = memberLevel;
+    if (typeof isActive === 'boolean') updatePayload.isActive = isActive;
+    if (typeof totalSpent === 'number' && totalSpent >= 0) updatePayload.totalSpent = totalSpent;
+
+    const user = await User.findByIdAndUpdate(id, updatePayload, {
+      new: true,
+      runValidators: true
+    }).select('-password');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'User updated successfully',
+      data: user
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: 'Error updating user',
+      error
+    });
+  }
+};
+
