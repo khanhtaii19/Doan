@@ -13,6 +13,10 @@ export interface IProduct extends Document {
   totalSold: number;
   image: string;
   promotionText?: string;
+  sizePrices?: {
+    medium: number;
+    large: number;
+  };
 }
 
 const productSchema = new Schema<IProduct>(
@@ -27,7 +31,11 @@ const productSchema = new Schema<IProduct>(
     stock: { type: Number, required: true, default: 0 },
     totalSold: { type: Number, default: 0 },
     image: { type: String, required: true },
-    promotionText: { type: String }
+    promotionText: { type: String },
+    sizePrices: {
+      medium: { type: Number, min: 0 },
+      large: { type: Number, min: 0 }
+    }
   },
   { timestamps: true }
 );

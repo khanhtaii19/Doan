@@ -7,6 +7,7 @@ export interface IOrder extends Document {
     productId: string;
     productName: string;
     productImage: string;
+    size?: 'medium' | 'large';
     quantity: number;
     price: number;
   }[];
@@ -46,6 +47,7 @@ const orderSchema = new Schema<IOrder>(
         productId: { type: String, required: true },
         productName: { type: String, default: '' },   // ← tên sản phẩm lúc đặt hàng
         productImage: { type: String, default: '' },  // ← ảnh sản phẩm lúc đặt hàng
+        size: { type: String, enum: ['medium', 'large'], default: 'medium' },
         quantity: { type: Number, required: true },
         price: { type: Number, required: true }
       }
